@@ -1,7 +1,8 @@
-package com.example.user.Controller;
+package com.example.user.controller;
 
-import com.example.user.Model.Role;
-import com.example.user.Service.RoleService;
+import com.example.user.model.Role;
+import com.example.user.service.RoleService;
+import com.example.user.dto.role.UpdateRoleRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,4 +47,17 @@ public class RoleController {
         roleService.assignPrivilegeToRole(roleId, privilegeId);
         return ResponseEntity.ok("Privilege assigned to role successfully.");
     }
+    @DeleteMapping("/{roleId}/privileges/{privilegeId}")
+    public ResponseEntity<String> removePrivilege(
+            @PathVariable Long roleId,
+            @PathVariable Long privilegeId) {
+        roleService.removePrivilegeFromRole(roleId, privilegeId);
+        return ResponseEntity.ok("Privilege removed from role successfully.");
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest dto) {
+        Role updated = roleService.updateRole(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
 }

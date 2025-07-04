@@ -1,4 +1,4 @@
-package com.example.user.Model;
+package com.example.user.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -18,10 +18,10 @@ public class User {
     private String fullName;
     private String email;
     private String phone;
-    private String Gender;
+    private String gender;
     private String Date_of_Birth;
     private Integer Age;
-    private String Address;
+    private String address;
     private String password;
     private String status;
     @Column(name = "identifyNum")

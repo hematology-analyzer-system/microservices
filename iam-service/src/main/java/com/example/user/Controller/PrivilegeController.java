@@ -1,7 +1,7 @@
-package com.example.user.Controller;
+package com.example.user.controller;
 
-import com.example.user.Model.Privilege;
-import com.example.user.Service.PrivilegeService;
+import com.example.user.model.Privilege;
+import com.example.user.service.PrivilegeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

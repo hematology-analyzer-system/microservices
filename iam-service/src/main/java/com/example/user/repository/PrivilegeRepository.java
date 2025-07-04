@@ -1,6 +1,6 @@
 package com.example.user.repository;
 
-import com.example.user.Model.Privilege;
+import com.example.user.model.Privilege;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

@@ -1,10 +1,10 @@
-package com.example.user.Service;
+package com.example.user.service;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-import com.example.user.Model.Privilege;
+import com.example.user.model.Privilege;
 import com.example.user.repository.PrivilegeRepository;
 
 @Service

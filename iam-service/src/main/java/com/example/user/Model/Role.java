@@ -1,5 +1,4 @@
-package com.example.user.Model;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+package com.example.user.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.HashSet;
