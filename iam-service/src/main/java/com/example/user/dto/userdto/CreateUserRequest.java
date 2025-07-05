@@ -19,22 +19,28 @@ public class CreateUserRequest {
     @NotBlank
     private String phone;
 
+    @NotBlank
+    private String identify_num;
+
     private String address;
 
     private String gender;
 
     private String password;
-    private String DoB;
+    private String date_of_Birth;
     private Integer age;
     public CreateUserRequest() {
     }
 
-    public CreateUserRequest(String fullName, String email, String phone, String address, String gender, String password) {
+    public CreateUserRequest(String fullName, String email, String phone,String identify_num, String address, String gender, String password, String date_of_Birth, Integer age ) {
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
+        this.identify_num = identify_num;
         this.address = address;
         this.gender = gender;
         this.password = password;
+        this.date_of_Birth = date_of_Birth;
+        this.age = age;
     }
 }

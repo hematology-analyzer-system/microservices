@@ -1,5 +1,6 @@
 package com.example.user.controller;
 
+import com.example.user.dto.role.PageRoleResponse;
 import com.example.user.model.Role;
 import com.example.user.service.RoleService;
 import com.example.user.dto.role.UpdateRoleRequest;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/roles")
 public class RoleController {
     private final RoleService roleService;
 
@@ -59,5 +60,15 @@ public class RoleController {
         Role updated = roleService.updateRole(id, dto);
         return ResponseEntity.ok(updated);
     }
+    @GetMapping("/paging")
+    public ResponseEntity<PageRoleResponse> getAllPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection
+    ) {
+        return ResponseEntity.ok(roleService.getAllRoles(page, size, sortBy, sortDirection));
+    }
+
 
 }

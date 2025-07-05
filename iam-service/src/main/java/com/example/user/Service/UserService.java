@@ -1,13 +1,10 @@
 package com.example.user.service;
+import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.User;
 import com.example.user.model.Role;
-import com.example.user.dto.userdto.UpdateUserRequest;
-import com.example.user.dto.userdto.UserResponse;
-import com.example.user.dto.userdto.PageUserResponse;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
-import com.example.user.dto.userdto.CreateUserRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import java.time.LocalDateTime;
@@ -31,11 +28,12 @@ public class UserService {
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
+        user.setIdentifyNum(request.getIdentify_num());
         user.setAddress(request.getAddress());
         user.setGender(request.getGender());
         user.setPassword(request.getPassword());
         user.setAge(request.getAge());
-        user.setDate_of_Birth(request.getDoB());
+        user.setDate_of_Birth(request.getDate_of_Birth());
         user.setCreate_at(LocalDateTime.now());
         user.setUpdate_at(LocalDateTime.now());
         return userRepository.save(user);
@@ -75,16 +73,12 @@ public class UserService {
         if (!user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
-
-        // 🔍 Kiểm tra trùng số điện thoại nếu phone mới khác
-        if (!user.getPhone().equals(dto.getPhone()) && userRepository.existsByPhone(dto.getPhone())) {
-            throw new IllegalArgumentException("Phone already exists");
-        }
         user.setFullName(dto.getFullName());
-        user.setPhone(dto.getPhone());
+        user.setDate_of_Birth(dto.getDate_of_Birth());
         user.setEmail(dto.getEmail());
         user.setAddress(dto.getAddress());
         user.setGender(dto.getGender());
+        user.setAge(dto.getAge());
 
         return userRepository.save(user);
     }
@@ -105,13 +99,15 @@ public class UserService {
 
         List<UserResponse> userResponses = userPage.getContent().stream()
                 .map(user -> new UserResponse(
-                        user.getId(),
                         user.getFullName(),
                         user.getEmail(),
                         user.getPhone(),
-                        user.getAddress(),
+                        user.getIdentifyNum(),
                         user.getGender(),
-                        user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
+                        user.getAge(),
+                        user.getAddress(),
+                        user.getDate_of_Birth()
+
                 ))
                 .collect(Collectors.toList());
 
@@ -127,5 +123,20 @@ public class UserService {
                 sortBy,
                 direction
         );
+    }
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        if (!user.getPassword().equals(request.getOldPassword())) {
+            throw new IllegalArgumentException("Old password is incorrect.");
+        }
+        // So sánh password cũ và mới
+        if (user.getPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("New password must be different from the old password.");
+        }
+
+        // Cập nhật mật khẩu
+        user.setPassword(request.getNewPassword());
+        userRepository.save(user);
     }
 }

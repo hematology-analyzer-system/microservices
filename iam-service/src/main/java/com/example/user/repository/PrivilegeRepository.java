@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface PrivilegeRepository extends JpaRepository<Privilege, Long> {
     Optional<Privilege> findByCode(String code);
+
 }

@@ -8,22 +8,23 @@ import java.util.Set;
 @Data
 
 public class UserResponse {
-    private Long id;
     private String fullName;
     private String email;
     private String phone;
-    private String address;
+    private String identifyNum;
     private String gender;
-    private Set<String> roles;
+    private Integer age;
+    private String address;
+    private String dateOfBirth;
     public UserResponse() {}
-    public UserResponse(Long id, String fullName, String phone, String email,
-                        String gender, String address, Set<String> roles) {
-        this.id = id;
+    public UserResponse( String fullName,  String email,String phone, String identifyNum, String gender, Integer age, String address, String dateOfBirth){
         this.fullName = fullName;
-        this.phone = phone;
         this.email = email;
+        this.phone = phone;
+        this.identifyNum = identifyNum;
         this.gender = gender;
+        this.age = age;
         this.address = address;
-        this.roles = roles;
+        this.dateOfBirth = dateOfBirth;
     }
 }

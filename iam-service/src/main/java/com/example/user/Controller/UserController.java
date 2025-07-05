@@ -1,18 +1,16 @@
 package com.example.user.controller;
 
+import com.example.user.dto.userdto.*;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
-import com.example.user.dto.userdto.UpdateUserRequest;
-import com.example.user.dto.userdto.PageUserResponse;
-import com.example.user.dto.userdto.CreateUserRequest;
-import com.example.user.dto.userdto.UserResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
     private final UserService userService;
 
@@ -71,5 +69,14 @@ public class UserController {
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest dto) {
         return ResponseEntity.ok(userService.updateUser(id, dto));
     }
+
+    @PutMapping("/{userId}/change-password")
+    public ResponseEntity<String> changePassword(
+            @PathVariable Long userId,
+            @RequestBody @Valid ChangePasswordRequest request) {
+        userService.changePassword(userId, request);
+        return ResponseEntity.ok("Password changed successfully.");
+    }
+
 
 }
