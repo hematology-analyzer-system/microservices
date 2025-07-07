@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: patient-service
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  datasource:
+    username: postgres
+    password: yasuo222
+    url: jdbc:postgresql://localhost:5432/patient
