@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/iam/privileges")
+@RequestMapping("/privileges")
 public class PrivilegeController {
     private final PrivilegeService privilegeService;
 

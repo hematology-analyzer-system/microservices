@@ -91,7 +91,7 @@ import java.util.Map;
 //}
 
 @RestController
-@RequestMapping("/iam/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
