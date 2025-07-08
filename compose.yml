@@ -1,0 +1,44 @@
+services:
+  iam-db:
+    image: postgres:17-alpine
+    container_name: iam-postgres
+    environment:
+      POSTGRES_DB: iam_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bavui4444
+    volumes:
+      - iam_db_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+  iam-service:
+    build: 
+      context: ./iam-service
+      dockerfile: Dockerfile
+    container_name: iam-service
+    depends_on:
+      - iam-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://iam-db:5432/iam_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: bavui4444
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_SHOW_SQL: "true"
+      SERVER_PORT: 8081
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+    ports:
+      - "127.0.0.1:8080:8081"
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+volumes:
+  iam_db_data:
+
+networks:
+  iam-network:
+    driver: bridge
