@@ -22,7 +22,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String fullName;
+    @Column(unique = true)
     private String email;
+    @Column(unique = true)
     private String phone;
     private String gender;
     private String Date_of_Birth;
@@ -30,7 +32,7 @@ public class User implements UserDetails {
     private String address;
     private String password;
     private String status;
-    @Column(name = "identifyNum")
+    @Column(name = "identifyNum", unique = true)
     private String identifyNum;
     private LocalDateTime update_at;
     private LocalDateTime create_at;
