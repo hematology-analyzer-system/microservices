@@ -3,7 +3,9 @@ spring:
     name: patient-service
 
   jpa:
-    show-sql: false
+    show-sql: true
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -11,6 +13,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   datasource:
-    username: postgres
-    password: yasuo222
     url: jdbc:postgresql://localhost:5432/patient
+    username: postgres
+    password: bavui4444
+
+server:
+  port: 8081
+  servlet:
+    context-path: /patient

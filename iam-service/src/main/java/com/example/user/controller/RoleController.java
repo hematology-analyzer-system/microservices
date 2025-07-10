@@ -1,6 +1,7 @@
 package com.example.user.controller;
 
 import com.example.user.dto.role.PageRoleResponse;
+import com.example.user.dto.role.RoleRequest;
 import com.example.user.model.Role;
 import com.example.user.service.RoleService;
 import com.example.user.dto.role.UpdateRoleRequest;
@@ -70,5 +71,8 @@ public class RoleController {
         return ResponseEntity.ok(roleService.getAllRoles(page, size, sortBy, sortDirection));
     }
 
-
+    @PostMapping("/search")
+    public ResponseEntity<PageRoleResponse> searchRoles(@RequestBody RoleRequest request) {
+        return ResponseEntity.ok(roleService.searchRoles(request));
+    }
 }

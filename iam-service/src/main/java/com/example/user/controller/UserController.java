@@ -45,14 +45,6 @@ public class UserController {
         userService.assignRoleToUser(userId, roleId);
         return ResponseEntity.ok("Role assigned to user successfully.");
     }
-//    @GetMapping("/search")
-//    public ResponseEntity<List<User>> searchByName(@RequestParam String name) {
-//        return ResponseEntity.ok(userService.searchUsersByName(name));
-//    }
-//    @GetMapping("/search")
-//    public ResponseEntity<List<UserResponse>> searchUsers(@RequestParam String keyword) {
-//        return ResponseEntity.ok(userService.searchUserByName(keyword));
-//    }
 
     @GetMapping("/search")
     public ResponseEntity<PageUserResponse> searchUsers(

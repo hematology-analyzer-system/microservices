@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import com.example.user.dto.role.RoleRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -105,6 +106,35 @@ public class RoleService {
                 rolePage.getSize(),
                 sortBy,
                 sortDirection);
+    }
+    public PageRoleResponse searchRoles(RoleRequest request) {
+        String keyword = request.getFilter() != null ? request.getFilter() : "";
+        String sortBy = request.getSort() != null ? request.getSort() : "id";
+        int page = request.getPage_num() > 0 ? request.getPage_num() - 1 : 0;
+        int pageSize = request.getPage_size(); // hoặc có thể cho phép cấu hình từ client
+
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(sortBy).ascending());
+
+        Page<Role> rolePage;
+
+        if ("code".equalsIgnoreCase(sortBy)) {
+            rolePage = roleRepository.findByCodeContainingIgnoreCase(keyword, pageable);
+        } else {
+            rolePage = roleRepository.findByNameContainingIgnoreCase(keyword, pageable);
+        }
+
+        List<RoleResponse> roles = rolePage.getContent().stream()
+                .map(r -> new RoleResponse( r.getName(), r.getCode(), r.getDescription(), r.getPrivileges()))
+                .collect(Collectors.toList());
+
+        return new PageRoleResponse(
+                roles,
+                rolePage.getTotalElements(),
+                page,
+                pageSize,
+                sortBy,
+                "asc"
+        );
     }
 }
 
