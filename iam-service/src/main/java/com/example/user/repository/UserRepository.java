@@ -15,7 +15,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
     List<User> findByFullNameContainingIgnoreCase(String FullName);
 
-    UserDetails findByEmail(String email);
+//    UserDetails findByEmail(String email);
+    User findByEmail(String email);
 //    @Query("SELECT new com.example.user.dto.userdto.UserResponse(u.id,u.fullName, u.phone, u.email, u.gender, u.address,CAST(collect(r.name) AS set)) "+
 //            "FROM User u WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
 //    List<UserResponse> searchByName(@Param("keyword") String keyword);

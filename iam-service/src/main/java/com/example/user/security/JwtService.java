@@ -1,5 +1,8 @@
 package com.example.user.security;
 
+import com.example.user.model.Privilege;
+import com.example.user.model.Role;
+import com.example.user.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -11,20 +14,51 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 
 @Service
 public class JwtService {
 
 //    private static final String SECRET_KEY = "your-secret-key-here";
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    public String generateToken(UserDetails userDetails) {
+
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+
+
+//        claims.put("email", user.getEmail());
+        claims.put("status", user.getStatus());
+
+
+        Set<Map<String, Object>> userRoles = new HashSet<>();
+        Set<Long> privilegeIds = new HashSet<>();
+
+        if (user.getRoles() != null) {
+            for (Role role : user.getRoles()) {
+                Map<String, Object> roleInfo = new HashMap<>();
+                roleInfo.put("id", role.getRoleId());
+                roleInfo.put("name", role.getName());
+                roleInfo.put("code", role.getCode());
+                userRoles.add(roleInfo);
+
+                if (role.getPrivileges() != null) {
+                    for (Privilege privilege : role.getPrivileges()) {
+                        privilegeIds.add(privilege.getPrivilegeId());
+                    }
+                }
+            }
+        }
+
+        claims.put("roles", userRoles);
+        claims.put("privilege_ids", privilegeIds);
+
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .setClaims(claims)
+                .setSubject(user.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 day
+                // Set expiration to 1 day (86,400,000 milliseconds).
+                // Consider shorter lifespans for access tokens and use refresh tokens for longer sessions.
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
