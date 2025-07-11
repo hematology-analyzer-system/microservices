@@ -2,12 +2,15 @@ package com.example.user.controller;
 import com.example.user.dto.auth.AuthRequest;
 import com.example.user.dto.register.RegisterRequest;
 //import com.example.user.model.Role;
+import com.example.user.model.Privilege;
+import com.example.user.model.Role;
 import com.example.user.model.User;
 //import com.example.user.repository.RoleRepository;
 
 
 import com.example.user.repository.UserRepository;
 import com.example.user.security.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,17 +23,14 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -42,6 +42,47 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/me")
+    public ResponseEntity<?> me(@RequestBody AuthRequest request) {
+        Authentication authentication = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+
+        User user = userRepository.findByEmail(request.getUsername());
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        // Build claims
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("status", user.getStatus());
+
+        Set<Map<String, Object>> userRoles = new HashSet<>();
+        Set<Long> privilegeIds = new HashSet<>();
+
+        if (user.getRoles() != null) {
+            for (Role role : user.getRoles()) {
+                Map<String, Object> roleInfo = new HashMap<>();
+                roleInfo.put("id", role.getRoleId());
+                roleInfo.put("name", role.getName());
+                roleInfo.put("code", role.getCode());
+                userRoles.add(roleInfo);
+
+                if (role.getPrivileges() != null) {
+                    for (Privilege privilege : role.getPrivileges()) {
+                        privilegeIds.add(privilege.getPrivilegeId());
+                    }
+                }
+            }
+        }
+
+        claims.put("roles", userRoles);
+        claims.put("privilege_ids", privilegeIds);
+
+        return ResponseEntity.ok(claims);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request, HttpServletResponse response) {
@@ -123,6 +164,7 @@ public class AuthController {
         user.setAddress(request.getAddress());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 //        user.setStatus(request.getStatus());
+        user.setStatus("ACTIVE");
         user.setIdentifyNum(request.getIdentifyNum());
 
         userRepository.save(user);

@@ -4,10 +4,13 @@ import com.example.user.dto.userdto.*;
 import com.example.user.model.User;
 import com.example.user.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import com.example.user.dto.search.searchDTO;
 
 @RestController
 @RequestMapping("/users")
@@ -69,6 +72,21 @@ public class UserController {
         userService.changePassword(userId, request);
         return ResponseEntity.ok("Password changed successfully.");
     }
+
+    @GetMapping("/filter")
+    public ResponseEntity<Page<searchDTO>> filterUsers(
+            @RequestParam(required = false) String searchText,
+            @RequestParam(required = false) Map<String, Object> filter,
+            @RequestParam(defaultValue = "fullName") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(defaultValue = "1") int offsetPage,
+            @RequestParam(defaultValue = "12") int limitOnePage
+    ) {
+        return ResponseEntity.ok(
+                userService.getFilteredUsers(searchText, filter, sortBy, direction, offsetPage, limitOnePage)
+        );
+    }
+
 
 
 }

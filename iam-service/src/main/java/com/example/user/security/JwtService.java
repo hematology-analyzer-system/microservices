@@ -23,34 +23,37 @@ public class JwtService {
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     public String generateToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
+//        Map<String, Object> claims = new HashMap<>();
+//
+//
+////        claims.put("email", user.getEmail());
+//        claims.put("status", user.getStatus());
+//
+//
+//        Set<Map<String, Object>> userRoles = new HashSet<>();
+//        Set<Long> privilegeIds = new HashSet<>();
+//
+//        if (user.getRoles() != null) {
+//            for (Role role : user.getRoles()) {
+//                Map<String, Object> roleInfo = new HashMap<>();
+//                roleInfo.put("id", role.getRoleId());
+//                roleInfo.put("name", role.getName());
+//                roleInfo.put("code", role.getCode());
+//                userRoles.add(roleInfo);
+//
+//                if (role.getPrivileges() != null) {
+//                    for (Privilege privilege : role.getPrivileges()) {
+//                        privilegeIds.add(privilege.getPrivilegeId());
+//                    }
+//                }
+//            }
+//        }
+//
+//        claims.put("roles", userRoles);
+//        claims.put("privilege_ids", privilegeIds);
 
-
-//        claims.put("email", user.getEmail());
-        claims.put("status", user.getStatus());
-
-
-        Set<Map<String, Object>> userRoles = new HashSet<>();
-        Set<Long> privilegeIds = new HashSet<>();
-
-        if (user.getRoles() != null) {
-            for (Role role : user.getRoles()) {
-                Map<String, Object> roleInfo = new HashMap<>();
-                roleInfo.put("id", role.getRoleId());
-                roleInfo.put("name", role.getName());
-                roleInfo.put("code", role.getCode());
-                userRoles.add(roleInfo);
-
-                if (role.getPrivileges() != null) {
-                    for (Privilege privilege : role.getPrivileges()) {
-                        privilegeIds.add(privilege.getPrivilegeId());
-                    }
-                }
-            }
-        }
-
-        claims.put("roles", userRoles);
-        claims.put("privilege_ids", privilegeIds);
+        Map<String, String> claims = new HashMap<>();
+        claims.put("", "");
 
         return Jwts.builder()
                 .setClaims(claims)
