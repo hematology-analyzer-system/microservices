@@ -14,4 +14,6 @@ spring:
         format_sql: true       # Format SQL cho d? ??c
 
 server:
-  port: 8080                   # C� th? ??i port n?u c?n
+  port: 8082    # C� th? ??i port n?u c?n
+  servlet:
+    context-path: /testorder
