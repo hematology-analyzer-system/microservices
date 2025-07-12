@@ -1,10 +1,13 @@
 package com.example.user.service;
+import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
+import com.example.user.model.Privilege;
 import com.example.user.model.User;
 import com.example.user.model.Role;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import java.time.LocalDateTime;
@@ -139,4 +142,72 @@ public class UserService {
         user.setPassword(request.getNewPassword());
         userRepository.save(user);
     }
+
+    public Page<searchDTO> getFilteredUsers(
+            String searchText,
+            Map<String, Object> filter,
+            String sortBy,
+            String direction,
+            int offsetPage,
+            int limitOnePage
+    ) {
+        Pageable pageable = PageRequest.of(offsetPage - 1, limitOnePage,
+                Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+
+//        Specification<User> spec = Specification.where(null);
+        Specification<User> spec = (root, query, cb) -> cb.conjunction(); // start with no-op predicate
+
+
+        // Full-text search
+        if (searchText != null && !searchText.isEmpty()) {
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("fullName")), "%" + searchText.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("email")), "%" + searchText.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("phone")), "%" + searchText.toLowerCase() + "%")
+            ));
+        }
+
+        // Filters
+        if (filter != null) {
+            if (filter.containsKey("gender")) {
+                String gender = filter.get("gender").toString();
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("gender"), gender));
+            }
+            if (filter.containsKey("status")) {
+                String status = filter.get("status").toString();
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+            }
+            if (filter.containsKey("role")) {
+                String roleName = filter.get("role").toString();
+                spec = spec.and((root, query, cb) -> cb.equal(root.join("roles").get("name"), roleName));
+            }
+        }
+
+        Page<User> users = userRepository.findAll(spec, pageable);
+
+        return users.map(user -> {
+            searchDTO dto = new searchDTO();
+            dto.setId(user.getId());
+            dto.setFullName(user.getFullName());
+            dto.setEmail(user.getEmail());
+            dto.setPhone(user.getPhone());
+            dto.setGender(user.getGender());
+            dto.setStatus(user.getStatus());
+            dto.setAddress(user.getAddress());
+            dto.setCreatedAt(user.getCreate_at() != null ? user.getCreate_at().toString() : null);
+            dto.setUpdatedAt(user.getUpdate_at() != null ? user.getUpdate_at().toString() : null);
+
+            dto.setRoles(user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toSet()));
+
+            dto.setPrivileges(user.getRoles().stream()
+                    .flatMap(role -> role.getPrivileges().stream())
+                    .map(Privilege::getDescription)
+                    .collect(Collectors.toSet()));
+
+            return dto;
+        });
+    }
+
 }
