@@ -10,7 +10,7 @@
 build-iam-service:
   <<: *iam-service-changes
   stage: build
-  image: maven:3.9.4-openjdk-21
+  image: maven:3.9.4-eclipse-temurin-21
   before_script:
     - cd iam-service
   script:
@@ -29,7 +29,7 @@ build-iam-service:
 test-iam-service:
   <<: *iam-service-changes
   stage: test
-  image: maven:3.9.4-openjdk-21
+  image: maven:3.9.4-eclipse-temurin-21
   services:
     - postgres:17-alpine
   variables:
@@ -65,7 +65,7 @@ test-iam-service:
 code-quality-iam-service:
   <<: *iam-service-changes
   stage: test
-  image: maven:3.9.4-openjdk-21
+  image: maven:3.9.4-eclipse-temurin-21
   before_script:
     - cd iam-service
   script:
@@ -88,7 +88,7 @@ code-quality-iam-service:
 package-iam-service:
   <<: *iam-service-changes
   stage: package
-  image: maven:3.9.4-openjdk-21
+  image: maven:3.9.4-eclipse-temurin-21
   before_script:
     - cd iam-service
   script:
