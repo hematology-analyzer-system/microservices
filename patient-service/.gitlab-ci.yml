@@ -156,13 +156,12 @@ docker-build-patient-service:
   before_script:
     - cd patient-service
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.gitlab.com
-    - echo "Building with datetime tag"
   script:
     - export DATETIME=$(date +%Y%m%d-%H%M%S)
-    - echo "Building Docker image for Patient Service with tag: $DATETIME"
+    - echo "Building Docker image for Patient Service with tag $DATETIME"
     - docker build --platform linux/amd64 -t registry.gitlab.com/healthcare5314327/microservices/patient-service:$DATETIME .
     - docker push registry.gitlab.com/healthcare5314327/microservices/patient-service:$DATETIME
-    - echo "Successfully pushed to registry"
+    - echo "Successfully pushed Patient service image"
   dependencies:
     - package-patient-service
   only:
