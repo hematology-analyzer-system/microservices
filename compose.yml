@@ -30,8 +30,23 @@ services:
       - patient-network
     restart: unless-stopped
 
+  testorder-db:
+    image: postgres:17-alpine
+    container_name: testorder-postgres
+    environment:
+      POSTGRES_DB: testorder
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bavui4444
+    volumes:
+      - testorder_db_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+    networks:
+      - testorder-network
+    restart: unless-stopped
+
   iam-service:
-    build: 
+    build:
       context: ./iam-service
       dockerfile: Dockerfile
     container_name: iam-service
@@ -54,7 +69,7 @@ services:
     restart: unless-stopped
 
   patient-service:
-    build: 
+    build:
       context: ./patient-service
       dockerfile: Dockerfile
     container_name: patient-service
@@ -76,14 +91,39 @@ services:
       - app-network
     restart: unless-stopped
 
+  testorder-service:
+    build:
+      context: ./testorder-service
+      dockerfile: Dockerfile
+    container_name: testorder-service
+    depends_on:
+      - testorder-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://testorder-db:5432/testorder
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: bavui4444
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_SHOW_SQL: "true"
+      SERVER_PORT: 8082
+    ports:
+      - "127.0.0.1:8082:8082"
+    networks:
+      - testorder-network
+      - app-network
+    restart: unless-stopped
+
 volumes:
   iam_db_data:
   patient_db_data:
+  testorder_db_data:
 
 networks:
   iam-network:
     driver: bridge
   patient-network:
+    driver: bridge
+  testorder-network:
     driver: bridge
   app-network:
     driver: bridge
