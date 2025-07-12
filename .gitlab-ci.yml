@@ -91,14 +91,13 @@ build-summary:
       - Set up deployment pipeline when ready
       
       **Docker Images Available:**
-      - registry.gitlab.com/healthcare5314327/microservices/iam-service:$CI_COMMIT_SHA
-      - registry.gitlab.com/healthcare5314327/microservices/patient-service:$CI_COMMIT_SHA
+      - registry.gitlab.com/healthcare5314327/microservices/iam-service:DATETIME-TAG
+      - registry.gitlab.com/healthcare5314327/microservices/patient-service:DATETIME-TAG
+      
+      Note: DATETIME-TAG format is YYYYMMDD-HHMMSS (e.g., 20250713-142530)
       EOF
     - echo "✅ Build summary created"
   artifacts:
     paths:
       - build-summary.md
     expire_in: 1 week
-  dependencies:
-    - docker-build-iam-service
-    - docker-build-patient-service
