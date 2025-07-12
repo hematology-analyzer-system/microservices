@@ -1,0 +1,171 @@
+# Patient Service CI/CD Pipeline
+
+.patient-service-changes: &patient-service-changes
+  only:
+    changes:
+      - patient-service/**/*
+      - compose.yml
+
+# Build Patient Service
+build-patient-service:
+  <<: *patient-service-changes
+  stage: build
+  image: maven:3.9-openjdk-21
+  before_script:
+    - cd patient-service
+  script:
+    - echo "Building Patient Service..."
+    - mvn $MAVEN_CLI_OPTS clean compile
+  artifacts:
+    paths:
+      - patient-service/target/
+    expire_in: 1 hour
+  cache:
+    key: patient-maven-$CI_COMMIT_REF_SLUG
+    paths:
+      - patient-service/.m2/repository/
+
+# Test Patient Service (Optional - Manual trigger until tests are written)
+test-patient-service:
+  <<: *patient-service-changes
+  stage: test
+  image: maven:3.9-openjdk-21
+  services:
+    - postgres:17-alpine
+  variables:
+    POSTGRES_DB: patient_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/patient_test
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: test
+  before_script:
+    - cd patient-service
+  script:
+    - echo "Running Patient Service tests..."
+    - mvn $MAVEN_CLI_OPTS test
+  artifacts:
+    reports:
+      junit: patient-service/target/surefire-reports/TEST-*.xml
+      coverage_report:
+        coverage_format: jacoco
+        path: patient-service/target/site/jacoco/jacoco.xml
+    paths:
+      - patient-service/target/surefire-reports/
+      - patient-service/target/site/jacoco/
+    expire_in: 1 week
+  coverage: '/Total.*?([0-9]{1,3})%/'
+  dependencies:
+    - build-patient-service
+  when: manual  # Make tests optional until they are written
+  allow_failure: true  # Don't block pipeline if tests fail
+
+# Integration Test Patient Service with Database (Optional - Manual trigger)
+integration-test-patient-service:
+  <<: *patient-service-changes
+  stage: test
+  image: maven:3.9-openjdk-21
+  services:
+    - postgres:17-alpine
+  variables:
+    POSTGRES_DB: patient
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: bavui4444
+    POSTGRES_HOST_AUTH_METHOD: trust
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/patient
+    SPRING_DATASOURCE_USERNAME: postgres
+    SPRING_DATASOURCE_PASSWORD: bavui4444
+    SPRING_PROFILES_ACTIVE: test
+  before_script:
+    - cd patient-service
+    - |
+      # Wait for PostgreSQL to be ready
+      until pg_isready -h postgres -p 5432 -U postgres; do
+        echo "Waiting for PostgreSQL..."
+        sleep 2
+      done
+    - |
+      # Initialize database with test data
+      if [ -f "database/init-patient-service.sql" ]; then
+        PGPASSWORD=bavui4444 psql -h postgres -U postgres -d patient -f database/init-patient-service.sql
+      fi
+  script:
+    - echo "Running Patient Service integration tests..."
+    - mvn $MAVEN_CLI_OPTS verify -Dspring.profiles.active=test
+  artifacts:
+    reports:
+      junit: patient-service/target/failsafe-reports/TEST-*.xml
+    paths:
+      - patient-service/target/failsafe-reports/
+    expire_in: 1 week
+  dependencies:
+    - build-patient-service
+  when: manual  # Make integration tests optional until they are written
+  allow_failure: true  # Don't block pipeline if tests fail
+
+# Code Quality for Patient Service (Optional - Manual trigger)
+code-quality-patient-service:
+  <<: *patient-service-changes
+  stage: test
+  image: maven:3.9-openjdk-21
+  before_script:
+    - cd patient-service
+  script:
+    - echo "Running code quality checks for Patient Service..."
+    - mvn $MAVEN_CLI_OPTS checkstyle:check
+    - mvn $MAVEN_CLI_OPTS spotbugs:check
+  artifacts:
+    reports:
+      codequality: patient-service/target/spotbugs.json
+    paths:
+      - patient-service/target/checkstyle-result.xml
+      - patient-service/target/spotbugsXml.xml
+    expire_in: 1 week
+  allow_failure: true
+  when: manual  # Make code quality checks optional
+  dependencies:
+    - build-patient-service
+
+# Package Patient Service
+package-patient-service:
+  <<: *patient-service-changes
+  stage: package
+  image: maven:3.9-openjdk-21
+  before_script:
+    - cd patient-service
+  script:
+    - echo "Packaging Patient Service..."
+    - mvn $MAVEN_CLI_OPTS package -DskipTests
+  artifacts:
+    paths:
+      - patient-service/target/*.jar
+    expire_in: 1 day
+  dependencies:
+    - build-patient-service  # Only depend on build, not tests
+
+# Build Docker Image for Patient Service
+docker-build-patient-service:
+  <<: *patient-service-changes
+  stage: package
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - cd patient-service
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.gitlab.com
+    # Create datetime tag for versioning
+    - export DATETIME=$(date +%Y%m%d-%H%M%S)
+    - echo "Building with datetime tag: $DATETIME"
+    - echo "Registry: registry.gitlab.com/healthcare5314327/microservices/patient-service"
+  script:
+    - echo "Building Docker image for Patient Service..."
+    - docker build --platform linux/amd64 -t registry.gitlab.com/healthcare5314327/microservices/patient-service:$DATETIME .
+    # Push to registry
+    - docker push registry.gitlab.com/healthcare5314327/microservices/patient-service:$DATETIME
+    - echo "✅ Successfully pushed to registry.gitlab.com/healthcare5314327/microservices/patient-service:$DATETIME"
+  dependencies:
+    - package-patient-service
+  only:
+    - main
+    - develop
