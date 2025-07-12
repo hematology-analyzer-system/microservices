@@ -10,7 +10,7 @@
 build-patient-service:
   <<: *patient-service-changes
   stage: build
-  image: maven:3.9-openjdk-21
+  image: maven:3.9.4-openjdk-21
   before_script:
     - cd patient-service
   script:
@@ -29,7 +29,7 @@ build-patient-service:
 test-patient-service:
   <<: *patient-service-changes
   stage: test
-  image: maven:3.9-openjdk-21
+  image: maven:3.9.4-openjdk-21
   services:
     - postgres:17-alpine
   variables:
@@ -65,7 +65,7 @@ test-patient-service:
 integration-test-patient-service:
   <<: *patient-service-changes
   stage: test
-  image: maven:3.9-openjdk-21
+  image: maven:3.9.4-openjdk-21
   services:
     - postgres:17-alpine
   variables:
@@ -108,7 +108,7 @@ integration-test-patient-service:
 code-quality-patient-service:
   <<: *patient-service-changes
   stage: test
-  image: maven:3.9-openjdk-21
+  image: maven:3.9.4-openjdk-21
   before_script:
     - cd patient-service
   script:
@@ -131,7 +131,7 @@ code-quality-patient-service:
 package-patient-service:
   <<: *patient-service-changes
   stage: package
-  image: maven:3.9-openjdk-21
+  image: maven:3.9.4-openjdk-21
   before_script:
     - cd patient-service
   script:
