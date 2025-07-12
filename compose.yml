@@ -1,4 +1,5 @@
 services:
+  # IAM Service
   iam-db:
     image: postgres:17-alpine
     container_name: iam-postgres
@@ -11,39 +12,13 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     networks:
-      - iam-network
+      - app-network
     restart: unless-stopped
-
-  patient-db:
-    image: postgres:17-alpine
-    container_name: patient-postgres
-    environment:
-      POSTGRES_DB: patient
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: bavui4444
-    volumes:
-      - patient_db_data:/var/lib/postgresql/data
-      - ./patient-service/database/init-patient-service.sql:/docker-entrypoint-initdb.d/init-patient-service.sql:ro
-    ports:
-      - "127.0.0.1:5433:5432"
-    networks:
-      - patient-network
-    restart: unless-stopped
-
-  testorder-db:
-    image: postgres:17-alpine
-    container_name: testorder-postgres
-    environment:
-      POSTGRES_DB: testorder
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: bavui4444
-    volumes:
-      - testorder_db_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5434:5432"
-    networks:
-      - testorder-network
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d iam_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   iam-service:
     build:
@@ -51,7 +26,8 @@ services:
       dockerfile: Dockerfile
     container_name: iam-service
     depends_on:
-      - iam-db
+      iam-db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://iam-db:5432/iam_db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -64,9 +40,30 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     networks:
-      - iam-network
       - app-network
     restart: unless-stopped
+
+  # Patient Service
+  patient-db:
+    image: postgres:17-alpine
+    container_name: patient-postgres
+    environment:
+      POSTGRES_DB: patient
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bavui4444
+    volumes:
+      - patient_db_data:/var/lib/postgresql/data
+      - ./patient-service/database/init-patient-service.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d patient"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   patient-service:
     build:
@@ -74,7 +71,8 @@ services:
       dockerfile: Dockerfile
     container_name: patient-service
     depends_on:
-      - patient-db
+      patient-db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://patient-db:5432/patient
       SPRING_DATASOURCE_USERNAME: postgres
@@ -87,9 +85,29 @@ services:
     ports:
       - "127.0.0.1:8081:8081"
     networks:
-      - patient-network
       - app-network
     restart: unless-stopped
+
+  # Test Order Service
+  testorder-db:
+    image: postgres:17-alpine
+    container_name: testorder-postgres
+    environment:
+      POSTGRES_DB: testorder
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bavui4444
+    volumes:
+      - testorder_db_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d testorder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   testorder-service:
     build:
@@ -97,7 +115,8 @@ services:
       dockerfile: Dockerfile
     container_name: testorder-service
     depends_on:
-      - testorder-db
+      testorder-db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://testorder-db:5432/testorder
       SPRING_DATASOURCE_USERNAME: postgres
@@ -109,7 +128,6 @@ services:
     ports:
       - "127.0.0.1:8082:8082"
     networks:
-      - testorder-network
       - app-network
     restart: unless-stopped
 
@@ -119,11 +137,5 @@ volumes:
   testorder_db_data:
 
 networks:
-  iam-network:
-    driver: bridge
-  patient-network:
-    driver: bridge
-  testorder-network:
-    driver: bridge
   app-network:
     driver: bridge
