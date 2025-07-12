@@ -108,17 +108,18 @@ docker-build-iam-service:
   image: docker:latest
   services:
     - docker:dind
+  variables:
+    DATETIME: $(date +%Y%m%d-%H%M%S)
   before_script:
     - cd iam-service
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.gitlab.com
-    - export DATETIME=$(date +%Y%m%d-%H%M%S)
-    - echo "Building with datetime tag: $DATETIME"
-    - echo "Registry: registry.gitlab.com/healthcare5314327/microservices/iam-service"
+    - echo "Building with datetime tag"
   script:
-    - echo "Building Docker image for IAM Service..."
+    - export DATETIME=$(date +%Y%m%d-%H%M%S)
+    - echo "Building Docker image for IAM Service with tag: $DATETIME"
     - docker build --platform linux/amd64 -t registry.gitlab.com/healthcare5314327/microservices/iam-service:$DATETIME .
     - docker push registry.gitlab.com/healthcare5314327/microservices/iam-service:$DATETIME
-    - echo "✅ Successfully pushed to registry.gitlab.com/healthcare5314327/microservices/iam-service:$DATETIME"
+    - echo "Successfully pushed to registry"
   dependencies:
     - package-iam-service
   only:
