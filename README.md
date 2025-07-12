@@ -5,34 +5,54 @@
 * Docker
 * Python 3
 
-### Run services
+### Run Services
 
 ```bash
-# IAM service + DB
+# Start specific service and its DB (e.g., IAM)
 python3 scripts/up.py iam
 
-# Patient service + DB
-python3 scripts/up.py patient
+# Start Test Order service and its DB
+python3 scripts/up.py testorder
 
-# All services
+# Start all services (IAM, Patient, Test Order) and their DBs in detached mode
 python3 scripts/up.py all
 ```
 
-### Stop services
+### Stream Logs
 
 ```bash
-docker compose down     # stop
-docker compose down -v  # stop + remove volumes
+# Stream logs for a specific service (e.g., patient-service)
+python3 scripts/log.py patient
+
+# Stream logs for all services
+python3 scripts/log.py all
 ```
 
-### Access
+### Stop Services
 
-* IAM: `http://localhost:8080/iam`
-* Patient: `http://localhost:8081/patient`
+```bash
+docker compose down        # Stop services
+docker compose down -v     # Stop and remove volumes
+```
+
+### Cleanup Docker Environment
+
+```bash
+# Remove all containers, images, and volumes
+# Note that this will make the next time you spin up services slower
+python3 scripts/wipe.py
+```
+
+### Access Endpoints
+
+  * IAM: `http://localhost:8080` (or `http://localhost:8080/iam` if context-path is set)
+  * Patient: `http://localhost:8081` (or `http://localhost:8081/patient` if context-path is set)
+  * Test Order: `http://localhost:8082`
 
 ### DB Credentials
 
-| DB         | Port | User     | Pass      |
-| ---------- | ---- | -------- | --------- |
-| iam-db     | 5432 | postgres | bavui4444 |
-| patient-db | 5433 | postgres | bavui4444 |
+| DB          | Port | User     | Pass      |
+| ----------- | ---- | -------- | --------- |
+| iam-db      | 5432 | postgres | bavui4444 |
+| patient-db  | 5433 | postgres | bavui4444 |
+| testorder-db| 5434 | postgres | bavui4444 |
