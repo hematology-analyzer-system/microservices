@@ -31,9 +31,9 @@ build-iam-service:
     - echo "🔨 Building IAM Service using Dockerfile..."
     - export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
     - echo "Build tag: $BUILD_TAG"
-    # Build multi-stage Dockerfile (build stage only for artifacts)
+    - echo "Building multi-stage Dockerfile (build stage only for artifacts)"
     - docker build --target build -t iam-service-build:$BUILD_TAG .
-    # Extract built JAR for artifacts
+    - echo "Extracting built JAR for artifacts"
     - docker create --name temp-container iam-service-build:$BUILD_TAG
     - docker cp temp-container:/app/target/ ./
     - docker rm temp-container
@@ -123,7 +123,7 @@ package-iam-service:
     - echo "📦 Building and pushing IAM Service Docker image..."
     - export DATETIME=$(date +%Y%m%d-%H%M%S)
     - echo "Building with timestamp: $DATETIME"
-    # Build complete Docker image using your Dockerfile
+    - echo "Building complete Docker image using your Dockerfile"
     - docker build -t $REGISTRY/iam-service:$DATETIME .
     - docker build -t $REGISTRY/iam-service:latest .
     - echo "Pushing Docker images..."
