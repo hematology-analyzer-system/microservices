@@ -19,8 +19,8 @@ import java.util.*;
 @Service
 public class JwtService {
 
-//    private static final String SECRET_KEY = "your-secret-key-here";
-    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final String SECRET_KEY = "my-super-ultra-promax-vip-pro-password-32-bytes-long";
+//    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     public String generateToken(User user) {
 //        Map<String, Object> claims = new HashMap<>();
@@ -52,8 +52,11 @@ public class JwtService {
 //        claims.put("roles", userRoles);
 //        claims.put("privilege_ids", privilegeIds);
 
-        Map<String, String> claims = new HashMap<>();
-        claims.put("", "");
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userid", user.getId());
+        claims.put("fullname", user.getFullName());
+        claims.put("email", user.getEmail());
+        claims.put("identifyNum", user.getIdentifyNum());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -90,9 +93,9 @@ public class JwtService {
     }
 
     private Key getSigningKey() {
-//        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
-//        return Keys.hmacShaKeyFor(keyBytes);
-        return SECRET_KEY;
+        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
+//        return SECRET_KEY;
     }
 }
 
