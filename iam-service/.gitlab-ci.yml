@@ -28,7 +28,7 @@ build-iam-service:
     - cd iam-service
     - docker info
   script:
-    - echo "🔨 Building IAM Service using Dockerfile..."
+    - echo "Building IAM Service using Dockerfile..."
     - export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
     - echo "Build tag: $BUILD_TAG"
     - echo "Building multi-stage Dockerfile (build stage only for artifacts)"
@@ -37,7 +37,7 @@ build-iam-service:
     - docker create --name temp-container iam-service-build:$BUILD_TAG
     - docker cp temp-container:/app/target/ ./
     - docker rm temp-container
-    - echo "✅ IAM Service build completed"
+    - echo "IAM Service build completed"
   artifacts:
     paths:
       - iam-service/target/
@@ -120,7 +120,7 @@ package-iam-service:
     - cd iam-service
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - echo "📦 Building and pushing IAM Service Docker image..."
+    - echo "Building and pushing IAM Service Docker image..."
     - export DATETIME=$(date +%Y%m%d-%H%M%S)
     - echo "Building with timestamp: $DATETIME"
     - echo "Building complete Docker image using your Dockerfile"
@@ -129,8 +129,8 @@ package-iam-service:
     - echo "Pushing Docker images..."
     - docker push $REGISTRY/iam-service:$DATETIME
     - docker push $REGISTRY/iam-service:latest
-    - echo "✅ IAM Service Docker image pushed successfully"
-    - echo "🐳 Available images:"
+    - echo "IAM Service Docker image pushed successfully"
+    - echo "Available images:"
     - echo "  - $REGISTRY/iam-service:$DATETIME"
     - echo "  - $REGISTRY/iam-service:latest"
   dependencies:
