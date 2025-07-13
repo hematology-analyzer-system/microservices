@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.Comment.AddCommentRequest;
 import com.example.demo.dto.Comment.CommentResponse;
 import com.example.demo.dto.Comment.UpdateCommentRequest;
-import com.example.demo.repository.CommentRepository;
+//import com.example.demo.repository.CommentRepository;
 import com.example.demo.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +15,8 @@ public class CommentController {
     @Autowired
     private CommentService commentService;
 
-    @Autowired
-    private CommentRepository commentRepository;
+//    @Autowired
+//    private CommentRepository commentRepository;
 
     @PostMapping("/{userId}")
     public ResponseEntity<CommentResponse> addComment(

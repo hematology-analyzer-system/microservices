@@ -47,13 +47,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String username = claims.getSubject(); // sub
             Long userId = claims.get("userid", Long.class);
-            String fullName = claims.get("fullname", String.class);
+            String fullname = claims.get("fullname", String.class);
+            String email = String.valueOf(claims.get("email", String.class));
             String identifyNum = claims.get("identifyNum", String.class);
 
 //            List<GrantedAuthority> authorities
 //                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
-            CurrentUser currentUser = new CurrentUser(userId, username, fullName, identifyNum);
+            CurrentUser currentUser = CurrentUser.builder()
+                    .userId(userId)
+                    .fullname(fullname)
+                    .email(email)
+                    .identifyNum(identifyNum)
+                    .build();
 
             UsernamePasswordAuthenticationToken authentication
                     = new UsernamePasswordAuthenticationToken(username, null, null);
