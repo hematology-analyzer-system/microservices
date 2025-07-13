@@ -5,12 +5,11 @@ import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
 import com.example.user.model.Role;
 import com.example.user.dto.role.UpdateRoleRequest;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.PrivilegeRepository;
 import com.example.user.repository.RoleRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import com.example.user.dto.role.RoleRequest;
 
@@ -20,13 +19,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class RoleService {
     private final RoleRepository roleRepository;
     private final PrivilegeRepository privilegeRepository;
-    public RoleService(RoleRepository roleRepository, PrivilegeRepository privilegeRepository) {
-        this.roleRepository = roleRepository;
-        this.privilegeRepository = privilegeRepository;
-    }
+
+    private final AuditorAware<UserAuditInfo> auditorAware;
 
     public Role createRole(Role role) {
         // Nếu role chưa có privilege nào được gán
@@ -42,7 +40,9 @@ public class RoleService {
 
             role.setPrivileges(Set.of(readOnly));
         }
-
+        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
+        role.setCreatedBy(currentUser);
+        role.setUpdatedBy(currentUser);
         return roleRepository.save(role);
     }
 
@@ -73,7 +73,8 @@ public class RoleService {
 
         role.setName(dto.getName());
         role.setDescription(dto.getDescription());
-
+        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
+        role.setUpdatedBy(currentUser);
         return roleRepository.save(role);
     }
     public void removePrivilegeFromRole(Long roleId, Long privilegeId) {

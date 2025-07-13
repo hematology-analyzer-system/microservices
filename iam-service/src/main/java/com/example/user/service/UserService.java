@@ -5,8 +5,10 @@ import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
 import com.example.user.model.User;
 import com.example.user.model.Role;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
@@ -14,13 +16,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    public UserService(UserRepository userRepository,RoleRepository roleRepository) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-    }
+    private final AuditorAware<UserAuditInfo> auditorAware;
+
 
     public User createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -39,6 +40,9 @@ public class UserService {
         user.setDate_of_Birth(request.getDate_of_Birth());
         user.setCreate_at(LocalDateTime.now());
         user.setUpdate_at(LocalDateTime.now());
+        UserAuditInfo audit = auditorAware.getCurrentAuditor().orElse(null);
+        user.setCreatedBy(audit);
+        user.setUpdatedBy(audit);
         return userRepository.save(user);
     }
 
@@ -82,7 +86,8 @@ public class UserService {
         user.setAddress(dto.getAddress());
         user.setGender(dto.getGender());
         user.setAge(dto.getAge());
-
+        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
+        user.setUpdatedBy(currentUser);
         return userRepository.save(user);
     }
 

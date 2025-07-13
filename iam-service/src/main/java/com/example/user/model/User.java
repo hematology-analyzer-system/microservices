@@ -1,6 +1,9 @@
 package com.example.user.model;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
         @UniqueConstraint(columnNames = "phone"),
         @UniqueConstraint(columnNames = "identifyNum")
 })
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +40,23 @@ public class User implements UserDetails {
     private String identifyNum;
     private LocalDateTime update_at;
     private LocalDateTime create_at;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "email", column = @Column(name = "created_by_email")),
+            @AttributeOverride(name = "fullName", column = @Column(name = "created_by_fullname")),
+            @AttributeOverride(name = "userId", column = @Column(name = "created_by_userid")),
+            @AttributeOverride(name = "identifyNum", column = @Column(name = "created_by_identify_num"))
+    })
+    private UserAuditInfo createdBy;
 
+    @AttributeOverrides({
+            @AttributeOverride(name = "email", column = @Column(name = "updated_by_email")),
+            @AttributeOverride(name = "fullName", column = @Column(name = "updated_by_fullname")),
+            @AttributeOverride(name = "userId", column = @Column(name = "updated_by_userid")),
+            @AttributeOverride(name = "identifyNum", column = @Column(name = "updated_by_identify_num"))
+    })
+    @Embedded
+    private UserAuditInfo updatedBy;
     @PrePersist
     protected void onCreate() {
         this.create_at = LocalDateTime.now();
