@@ -58,6 +58,8 @@ public class JwtService {
         claims.put("email", user.getEmail());
         claims.put("identifyNum", user.getIdentifyNum());
 
+        System.out.println(claims.get("userid") + " " +  claims.get("fullname") + " " + claims.get("email"));
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getUsername())
