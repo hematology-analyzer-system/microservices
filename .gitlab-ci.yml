@@ -1,10 +1,22 @@
 # Healthcare Microservices CI Pipeline
-# Focus: Build, Test, Package (No Deployment)
+# Focus: Build, Test, Package using Dockerfiles (No Deployment)
+
+# Workflow rules - only run on MR to develop/main and direct pushes to develop/main
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+      when: always
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+  # Container Registry
+  REGISTRY: registry.gitlab.com/healthcare5314327/microservices
 
 stages:
   - validate
@@ -17,6 +29,14 @@ stages:
 validate-project:
   stage: validate
   image: alpine:latest
+  rules:
+    # Run on merge requests to develop/main
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+      when: always
+    # Run on direct pushes to develop/main
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
   script:
     - echo "🔍 Validating project structure..."
     - |
@@ -40,6 +60,12 @@ include:
 dependency-scanning:
   stage: security
   image: maven:3.9.4-eclipse-temurin-21
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+      when: always
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
   script:
     - echo "🔒 Running dependency security scan..."
     - |
@@ -61,6 +87,12 @@ dependency-scanning:
 build-summary:
   stage: package
   image: alpine:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+      when: always
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
   script:
     - echo "📊 Generating CI build summary..."
     - |
@@ -70,8 +102,9 @@ build-summary:
       ## ✅ CI Pipeline Completed Successfully
       
       **Build Information:**
-      - Java Version: OpenJDK 21
-      - Maven Version: 3.9
+      - Java Version: OpenJDK 21 (via Dockerfile)
+      - Maven Version: 3.9.4 (via Dockerfile)
+      - Build Method: Multi-stage Docker builds
       - Build Date: $(date)
       - Git Commit: $CI_COMMIT_SHA
       - Git Branch: $CI_COMMIT_REF_NAME
@@ -81,8 +114,8 @@ build-summary:
       - 👥 Patient Service
       
       **Artifacts Created:**
-      - JAR files for both services
-      - Docker images (ready for deployment)
+      - JAR files (extracted from Docker builds)
+      - Docker images (using your optimized Dockerfiles)
       - Security scan reports
       
       **Next Steps:**

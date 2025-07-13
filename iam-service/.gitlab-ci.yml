@@ -1,27 +1,49 @@
 # IAM Service CI/CD Pipeline
 
 .iam-service-changes: &iam-service-changes
-  only:
-    changes:
-      - iam-service/**/*
-      - compose.yml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+      changes:
+        - iam-service/**/*
+        - compose.yml
+      when: always
+    - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main")
+      changes:
+        - iam-service/**/*
+        - compose.yml
+      when: always
+    - when: never
 
-# Build IAM Service
+# Build IAM Service using Dockerfile
 build-iam-service:
   <<: *iam-service-changes
   stage: build
-  image: maven:3.9.4-eclipse-temurin-21
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
   before_script:
     - cd iam-service
+    - docker info
   script:
-    - echo "Building IAM Service..."
-    - mvn $MAVEN_CLI_OPTS clean compile
+    - echo "🔨 Building IAM Service using Dockerfile..."
+    - export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
+    - echo "Build tag: $BUILD_TAG"
+    # Build multi-stage Dockerfile (build stage only for artifacts)
+    - docker build --target build -t iam-service-build:$BUILD_TAG .
+    # Extract built JAR for artifacts
+    - docker create --name temp-container iam-service-build:$BUILD_TAG
+    - docker cp temp-container:/app/target/ ./
+    - docker rm temp-container
+    - echo "✅ IAM Service build completed"
   artifacts:
     paths:
       - iam-service/target/
     expire_in: 1 hour
   cache:
-    key: iam-maven-$CI_COMMIT_REF_SLUG
+    key: iam-docker-$CI_COMMIT_REF_SLUG
     paths:
       - iam-service/.m2/repository/
 
@@ -84,43 +106,32 @@ code-quality-iam-service:
   dependencies:
     - build-iam-service
 
-# Package IAM Service
+# Package IAM Service - Full Docker Build
 package-iam-service:
   <<: *iam-service-changes
   stage: package
-  image: maven:3.9.4-eclipse-temurin-21
-  before_script:
-    - cd iam-service
-  script:
-    - echo "Packaging IAM Service..."
-    - mvn $MAVEN_CLI_OPTS package -DskipTests
-  artifacts:
-    paths:
-      - iam-service/target/*.jar
-    expire_in: 1 day
-  dependencies:
-    - build-iam-service  # Only depend on build, not tests
-
-# Build Docker Image for IAM Service
-docker-build-iam-service:
-  <<: *iam-service-changes
-  stage: package
-  image: docker:latest
+  image: docker:20.10.16
   services:
-    - docker:dind
+    - docker:20.10.16-dind
   variables:
-    DATETIME: $(date +%Y%m%d-%H%M%S)
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
   before_script:
     - cd iam-service
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD registry.gitlab.com
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
+    - echo "📦 Building and pushing IAM Service Docker image..."
     - export DATETIME=$(date +%Y%m%d-%H%M%S)
-    - echo "Building Docker image for IAM Service with tag $DATETIME"
-    - docker build --platform linux/amd64 -t registry.gitlab.com/healthcare5314327/microservices/iam-service:$DATETIME .
-    - docker push registry.gitlab.com/healthcare5314327/microservices/iam-service:$DATETIME
-    - echo "Successfully pushed IAM service image"
+    - echo "Building with timestamp: $DATETIME"
+    # Build complete Docker image using your Dockerfile
+    - docker build -t $REGISTRY/iam-service:$DATETIME .
+    - docker build -t $REGISTRY/iam-service:latest .
+    - echo "Pushing Docker images..."
+    - docker push $REGISTRY/iam-service:$DATETIME
+    - docker push $REGISTRY/iam-service:latest
+    - echo "✅ IAM Service Docker image pushed successfully"
+    - echo "🐳 Available images:"
+    - echo "  - $REGISTRY/iam-service:$DATETIME"
+    - echo "  - $REGISTRY/iam-service:latest"
   dependencies:
-    - package-iam-service
-  only:
-    - main
-    - develop
+    - build-iam-service  # Ensure build completed first
