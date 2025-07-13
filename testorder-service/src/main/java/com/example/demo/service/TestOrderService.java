@@ -67,20 +67,20 @@ public class TestOrderService {
 
         testOrder.setUpdateBy(formatlizeCreatedBy(
                 currentUser.getUserId(),
-                currentUser.getUsername(),
+                currentUser.getFullname(),
                 currentUser.getEmail(),
                 currentUser.getIdentifyNum()
         ));
 
         System.out.println(formatlizeCreatedBy(
                 currentUser.getUserId(),
-                currentUser.getUsername(),
+                currentUser.getFullname(),
                 currentUser.getEmail(),
                 currentUser.getIdentifyNum()));
 
         return toResponse(testOrder, formatlizeCreatedBy(
                 currentUser.getUserId(),
-                currentUser.getUsername(),
+                currentUser.getFullname(),
                 currentUser.getEmail(),
                 currentUser.getIdentifyNum()));
     }
