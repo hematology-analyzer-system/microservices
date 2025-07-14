@@ -11,8 +11,10 @@ import com.example.demo.exception.ForbiddenActionException;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.ResultRepository;
 import com.example.demo.repository.TestOrderRepository;
+import com.example.demo.security.CurrentUser;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,6 +25,13 @@ public class CommentService {
     private TestOrderRepository testOrderRepository;
 
     private ResultRepository resultRepository;
+
+    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+        return String.format(
+                "ID: %d | Name: %s | Email: %s | IdNum: %s",
+                id, name, email, identifyNum
+        );
+    }
 
     public CommentResponse addComment(Long userId, AddCommentRequest addCommentRequest) {
         if(addCommentRequest.getTestOrderId() == null && addCommentRequest.getResultId() == null){
@@ -42,9 +51,18 @@ public class CommentService {
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Result Not Found"));
         }
 
+
+
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getEmail()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
         Comment comment = Comment.builder()
                 .userId(userId)
                 .content(addCommentRequest.getContent())
+                .createBy(createdByinString)
                 .result(result)
                 .testOrder(testOrder)
                 .build();
@@ -69,7 +87,14 @@ public class CommentService {
             throw new ForbiddenActionException("User can't change this comment");
         }
 
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getEmail()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
         comment.setContent(updateCommentRequest.getContent());
+        comment.setUpdateBy(createdByinString);
 
         commentRepository.save(comment);
 

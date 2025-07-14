@@ -32,6 +32,9 @@ public class Comment {
     @Column(name = "createBy", updatable = false)
     private String createBy;
 
+    @Column(name = "updateBy")
+    private String updateBy;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "result_id", unique = true)
     private Result result;

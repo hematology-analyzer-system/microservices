@@ -7,8 +7,10 @@ import com.example.demo.entity.TestOrder;
 import com.example.demo.exception.ApiException;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.ResultRepository;
+import com.example.demo.security.CurrentUser;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,6 +31,13 @@ public class ResultService {
         }
     }
 
+    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+        return String.format(
+                "ID: %d | Name: %s | Email: %s | IdNum: %s",
+                id, name, email, identifyNum
+        );
+    }
+
 
     public ResultResponse reviewResult (Long resultId, ReviewResultRequest reviewResultRequest){
         Result result = resultRepository.findById(resultId)
@@ -46,10 +55,20 @@ public class ResultService {
             throw new BadRequestException("Value is Not In Range");
         }
 
+        CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getEmail()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+
         result.setValue(value);
         result.setReviewed(true);
+        result.setUpdateBy(createdByinString);
 
         testOrder.setStatus("REVIEWED");
+
+
         resultRepository.save(result);
         return ResultResponse.builder()
                 .reviewed(result.getReviewed())

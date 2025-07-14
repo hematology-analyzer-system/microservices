@@ -72,12 +72,6 @@ public class TestOrderService {
                 currentUser.getIdentifyNum()
         ));
 
-        System.out.println(formatlizeCreatedBy(
-                currentUser.getUserId(),
-                currentUser.getFullname(),
-                currentUser.getEmail(),
-                currentUser.getIdentifyNum()));
-
         return toResponse(testOrder, formatlizeCreatedBy(
                 currentUser.getUserId(),
                 currentUser.getFullname(),

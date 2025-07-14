@@ -26,6 +26,7 @@ public class TestOrder {
 
     private String createdBy;
 
+    @Column(name = "updateBy", updatable = false)
     private String updateBy;
 
     private String runBy;

@@ -27,6 +27,9 @@ public class Result {
 
     private String rangeMax;
 
+    @Column(name = "updateBy")
+    private String updateBy;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_order_id")
     private TestOrder testOrder;
