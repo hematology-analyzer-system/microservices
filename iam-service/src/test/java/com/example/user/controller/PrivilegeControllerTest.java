@@ -1,10 +1,13 @@
 package com.example.user.controller;
 
+import com.example.user.config.AuditTestConfig;
 import com.example.user.model.Privilege;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.security.JwtService;
 import com.example.user.service.PrivilegeService;
 import com.example.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -12,7 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -25,9 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Optional;
 
-@WebMvcTest(controllers = PrivilegeController.class)
+@SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
+@Import(AuditTestConfig.class)
+@ActiveProfiles("test")
 public class PrivilegeControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -36,9 +45,19 @@ public class PrivilegeControllerTest {
     private PrivilegeService privilegeService;
     @MockitoBean
     private JwtService jwtService;
+    @MockitoBean(name = "auditorProvider")
+    private AuditorAware<UserAuditInfo> auditorAware;
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        given(auditorAware.getCurrentAuditor()).willReturn(Optional.of(
+                new UserAuditInfo(999L, "Test User", "test@example.com", "999999999")
+        ));
+    }
+
 
     @Test
     public void PrivilegeController_create_ShouldReturnCreatedPrivilege() throws Exception {

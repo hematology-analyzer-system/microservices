@@ -1,18 +1,22 @@
 package com.example.user.repository;
 
+import com.example.user.config.AuditTestConfig;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.User;
 //import org.junit.jupiter.api.Assertions;
+import com.example.user.model.UserAuditInfo;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 //import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 
 import java.time.LocalDateTime;
@@ -21,6 +25,7 @@ import java.util.Optional;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+@Import(AuditTestConfig.class)
 public class UserRepositoryTest {
 
     @Autowired

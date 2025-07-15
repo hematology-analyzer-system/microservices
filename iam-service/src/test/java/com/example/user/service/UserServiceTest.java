@@ -7,14 +7,17 @@ import com.example.user.dto.userdto.UpdateUserRequest;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Role;
 import com.example.user.model.User;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.RoleRepository;
 import com.example.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
@@ -37,8 +40,19 @@ public class UserServiceTest {
     @Mock
     private RoleRepository roleRepository;
 
+    @Mock
+    private AuditorAware<UserAuditInfo> auditorAware;
+
     @InjectMocks
     private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(auditorAware.getCurrentAuditor())
+                .thenReturn(Optional.of(new UserAuditInfo(
+                        99L, "Test User", "test@example.com", "999999999"
+                )));
+    }
 
     @Test
     public void UserServiceTest_CreateUser_ReturnNewUser(){

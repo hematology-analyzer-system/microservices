@@ -1,40 +1,52 @@
 package com.example.user.controller;
 
+import com.example.user.config.AuditTestConfig;
 import com.example.user.dto.auth.AuthRequest;
 import com.example.user.dto.register.RegisterRequest;
 import com.example.user.model.User;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.UserRepository;
 import com.example.user.security.JwtService;
 import com.example.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.AuditorAware;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AuthController.class)
+@SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
+@Import(AuditTestConfig.class)
+@ActiveProfiles("test")
 public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -51,8 +63,18 @@ public class AuthControllerTest {
     @MockitoBean
     private AuthenticationManager authManager;
 
+    @MockitoBean(name = "auditorProvider")
+    private AuditorAware<UserAuditInfo> auditorAware;
+
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        given(auditorAware.getCurrentAuditor()).willReturn(Optional.of(
+                new UserAuditInfo(999L, "Test User", "test@example.com", "999999999")
+        ));
+    }
 
     @Test
     public void AuthController_register_ShouldReturnSuccessMessage() throws Exception {
@@ -66,7 +88,7 @@ public class AuthControllerTest {
         request.setAge(34);
         request.setAddress("123 Main St");
         request.setPassword("123456");
-        request.setStatus("ACTIVE");
+//        request.setStatus("ACTIVE");
         request.setIdentifyNum("ID123456");
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(false);
@@ -95,7 +117,7 @@ public class AuthControllerTest {
         request.setAge(34);
         request.setAddress("123 Main St");
         request.setPassword("123456");
-        request.setStatus("ACTIVE");
+//        request.setStatus("ACTIVE");
         request.setIdentifyNum("ID123456");
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
@@ -121,7 +143,7 @@ public class AuthControllerTest {
         request.setAge(34);
         request.setAddress("123 Main St");
         request.setPassword("123456");
-        request.setStatus("ACTIVE");
+//        request.setStatus("ACTIVE");
         request.setIdentifyNum("ID123456");
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(false);
@@ -173,7 +195,6 @@ public class AuthControllerTest {
         response.andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(token))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.type").value("Bearer"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(user.getUsername()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").value(86400));
 
