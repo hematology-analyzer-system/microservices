@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
 //                                .requestMatchers("/auth/register").permitAll()
 //                        .requestMatchers("/public/**").permitAll() // Add any other public endpoints
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
