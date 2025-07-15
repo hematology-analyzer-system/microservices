@@ -6,9 +6,11 @@ import com.example.user.dto.role.UpdateRoleRequest;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
 import com.example.user.model.Role;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.PrivilegeRepository;
 import com.example.user.repository.RoleRepository;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,8 +31,20 @@ public class RoleServiceTest {
     @Mock
     private RoleRepository roleRepository;
 
+    @Mock
+    private AuditorAware<UserAuditInfo> auditorAware;
+
     @InjectMocks
     private RoleService roleService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(auditorAware.getCurrentAuditor())
+                .thenReturn(Optional.of(new UserAuditInfo(
+                        99L, "Test User", "test@example.com", "999999999"
+                )));
+    }
+
 
     @Test
     public void RoleServiceTest_createRole_ShouldAssignReadOnlyPrivilege_WhenNoPrivilegeProvided() {

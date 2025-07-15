@@ -1,6 +1,7 @@
 package com.example.user.repository;
 
 import com.example.user.DataInitializer;
+import com.example.user.config.AuditTestConfig;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
 import com.example.user.model.Role;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -21,6 +23,7 @@ import java.util.Set;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+@Import(AuditTestConfig.class)
 public class RoleRepositoryTest {
 
     @Autowired

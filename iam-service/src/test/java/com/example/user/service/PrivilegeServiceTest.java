@@ -2,14 +2,17 @@ package com.example.user.service;
 
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.PrivilegeRepository;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.AuditorAware;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +25,21 @@ import static org.mockito.Mockito.when;
 public class PrivilegeServiceTest {
     @Mock
     private PrivilegeRepository privilegeRepository;
+
+    @Mock
+    private AuditorAware<UserAuditInfo> auditorAware;
+
     @InjectMocks
     private PrivilegeService privilegeService;
+
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(auditorAware.getCurrentAuditor())
+                .thenReturn(Optional.of(new UserAuditInfo(
+                        99L, "Test User", "test@example.com", "999999999"
+                )));
+    }
 
     @Test
     public void PrivilegeServiceTest_getAllPrivileges_ShouldReturnListOfPrivileges() {

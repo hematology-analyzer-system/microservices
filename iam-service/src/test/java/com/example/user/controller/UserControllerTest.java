@@ -1,8 +1,10 @@
 package com.example.user.controller;
 
+import com.example.user.config.AuditTestConfig;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.User;
+import com.example.user.model.UserAuditInfo;
 import com.example.user.security.JwtService;
 import com.example.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,8 +20,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,9 +43,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UserController.class)
+@SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
+@Import(AuditTestConfig.class)
+@ActiveProfiles("test")
 public class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -49,6 +56,8 @@ public class UserControllerTest {
     private UserService userService;
     @MockitoBean
     private JwtService  jwtService;
+    @MockitoBean(name = "auditorProvider")
+    private AuditorAware<UserAuditInfo> auditorAware;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -98,6 +107,10 @@ public class UserControllerTest {
         changePasswordRequest = new ChangePasswordRequest();
         changePasswordRequest.setOldPassword("oldPassword");
         changePasswordRequest.setNewPassword("newPassword123");
+
+        given(auditorAware.getCurrentAuditor()).willReturn(Optional.of(
+                new UserAuditInfo(999L, "Test User", "test@example.com", "999999999")
+        ));
     }
 
     @Test
