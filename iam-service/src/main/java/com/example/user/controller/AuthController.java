@@ -8,6 +8,7 @@ import com.example.user.model.User;
 //import com.example.user.repository.RoleRepository;
 
 
+import com.example.user.model.UserAuditInfo;
 import com.example.user.repository.UserRepository;
 import com.example.user.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -166,7 +167,33 @@ public class AuthController {
 //        user.setStatus(request.getStatus());
         user.setStatus("ACTIVE");
         user.setIdentifyNum(request.getIdentifyNum());
+        user.setCreatedBy(new UserAuditInfo(
+                null, // userId chưa có vì chưa persist
+                request.getFullName(),
+                request.getEmail(),
+                request.getIdentifyNum()
+        ));
+        user.setUpdatedBy(new UserAuditInfo(
+                null, // userId chưa có vì chưa persist
+                request.getFullName(),
+                request.getEmail(),
+                request.getIdentifyNum()
+        ));
+        userRepository.save(user);
 
+// sau khi save, có thể set lại userId nếu cần:
+        user.setCreatedBy(new UserAuditInfo(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getIdentifyNum()
+        ));
+        user.setUpdatedBy(new UserAuditInfo(
+                user.getId(),
+                request.getFullName(),
+                request.getEmail(),
+                request.getIdentifyNum()
+        ));
         userRepository.save(user);
 
         return ResponseEntity.ok(Collections.singletonMap("message", "User registered successfully"));
