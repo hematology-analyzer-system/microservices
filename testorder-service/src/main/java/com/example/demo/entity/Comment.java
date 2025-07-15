@@ -39,7 +39,7 @@ public class Comment {
     @JoinColumn(name = "result_id", unique = true)
     private Result result;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_order_id")
     private TestOrder testOrder;
 }

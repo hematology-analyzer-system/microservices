@@ -24,9 +24,10 @@ public class TestOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long testId;
 
+    @Column(name = "createdBy", updatable = false)
     private String createdBy;
 
-    @Column(name = "updateBy", updatable = false)
+    @Column(name = "updateBy")
     private String updateBy;
 
     private String runBy;
@@ -42,4 +43,7 @@ public class TestOrder {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
+
+    @OneToOne(mappedBy = "testOrder", cascade = CascadeType.ALL)
+    private Comment comment;
 }
