@@ -1,5 +1,5 @@
 # Patient Service CI/CD Pipeline
-.patient-service-code-changes: &patient-service-code-changes
+.patient-service-changes: &patient-service-changes
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
       changes:
