@@ -1,19 +1,19 @@
 # Patient Service CI/CD Pipeline
-
-.patient-service-changes: &patient-service-changes
+.patient-service-code-changes: &patient-service-code-changes
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
       changes:
-        - patient-service/**/*
-        - compose.yml
+        - pom.xml
+        - src/**/*
+        - .gitlab-ci.yml
       when: always
     - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main")
       changes:
-        - patient-service/**/*
-        - compose.yml
+        - patient-service/pom.xml
+        - patient-service/src/**/*
+        - patient-service/.gitlab-ci.yml
       when: always
-    - when: never
-
+      
 # Build Patient Service using Dockerfile
 build-patient-service:
   <<: *patient-service-changes
