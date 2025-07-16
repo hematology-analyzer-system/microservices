@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/MockTest_Sprint3
+    url: jdbc:postgresql://localhost:5434/MockTest_Sprint3
     username: postgres
     password: 611989
     driver-class-name: org.postgresql.Driver
@@ -17,3 +17,6 @@ server:
   port: 8082    # C� th? ??i port n?u c?n
   servlet:
     context-path: /testorder
+
+jwt:
+  secret: "my-super-ultra-promax-vip-pro-password-32-bytes-long"

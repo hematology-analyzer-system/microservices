@@ -29,6 +29,9 @@ public class Comment {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "createBy", updatable = false)
+    private String createBy;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "result_id", unique = true)
     private Result result;

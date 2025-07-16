@@ -24,8 +24,9 @@ public class TestOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long testId;
 
-    @CreatedBy
     private String createdBy;
+
+    private String updateBy;
 
     private String runBy;
 
