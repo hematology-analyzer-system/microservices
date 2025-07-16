@@ -149,32 +149,32 @@ code-quality-patient-service:
   dependencies:
     - build-patient-service
 
-# Package Patient Service - Full Docker Build
-package-patient-service:
-  <<: *patient-service-changes
-  stage: package
-  image: docker:20.10.16
-  services:
-    - docker:20.10.16-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-  before_script:
-    - cd patient-service
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script: |
-    echo "Building and pushing Patient Service Docker image..."
-    export DATETIME=$(date +%Y%m%d-%H%M%S)
-    echo "Building with timestamp - $DATETIME"
-    echo "Building complete Docker image using your Dockerfile"
-    docker build -t $REGISTRY/patient-service:$DATETIME .
-    docker build -t $REGISTRY/patient-service:latest .
-    echo "Pushing Docker images..."
-    docker push $REGISTRY/patient-service:$DATETIME
-    docker push $REGISTRY/patient-service:latest
-    echo "Patient Service Docker image pushed successfully"
-    echo "Available images:"
-    echo "  - $REGISTRY/patient-service:$DATETIME"
-    echo "  - $REGISTRY/patient-service:latest"
-  dependencies:
-    - build-patient-service  # Ensure build completed first
+# # Package Patient Service - Full Docker Build
+# package-patient-service:
+#   <<: *patient-service-changes
+#   stage: package
+#   image: docker:20.10.16
+#   services:
+#     - docker:20.10.16-dind
+#   variables:
+#     DOCKER_TLS_CERTDIR: ""
+#     DOCKER_HOST: tcp://docker:2375
+#   before_script:
+#     - cd patient-service
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#   script: |
+#     echo "Building and pushing Patient Service Docker image..."
+#     export DATETIME=$(date +%Y%m%d-%H%M%S)
+#     echo "Building with timestamp - $DATETIME"
+#     echo "Building complete Docker image using your Dockerfile"
+#     docker build -t $REGISTRY/patient-service:$DATETIME .
+#     docker build -t $REGISTRY/patient-service:latest .
+#     echo "Pushing Docker images..."
+#     docker push $REGISTRY/patient-service:$DATETIME
+#     docker push $REGISTRY/patient-service:latest
+#     echo "Patient Service Docker image pushed successfully"
+#     echo "Available images:"
+#     echo "  - $REGISTRY/patient-service:$DATETIME"
+#     echo "  - $REGISTRY/patient-service:latest"
+#   dependencies:
+#     - build-patient-service  # Ensure build completed first
