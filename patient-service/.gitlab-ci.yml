@@ -112,9 +112,9 @@ integration-test-patient-service:
   #     if [ -f "database/init-patient-service.sql" ]; then
   #       PGPASSWORD=bavui4444 psql -h postgres -U postgres -d patient -f database/init-patient-service.sql
   #     fi
-  # script:
-  #   - echo "Running Patient Service integration tests..."
-  #   - mvn $MAVEN_CLI_OPTS verify -Dspring.profiles.active=test
+  script:
+    - echo "Running Patient Service integration tests..."
+    - mvn $MAVEN_CLI_OPTS verify -Dspring.profiles.active=test
   # artifacts:
   #   reports:
   #     junit: patient-service/target/failsafe-reports/TEST-*.xml
@@ -123,8 +123,8 @@ integration-test-patient-service:
   #   expire_in: 1 week
   # dependencies:
   #   - build-patient-service
-  # when: manual  # Make integration tests optional until they are written
-  # allow_failure: true  # Don't block pipeline if tests fail
+  when: manual  # Make integration tests optional until they are written
+  allow_failure: true  # Don't block pipeline if tests fail
 
 # Code Quality for Patient Service (Optional - Manual trigger)
 code-quality-patient-service:
