@@ -1,35 +1,37 @@
 services:
-  # IAM Service
-  iam-db:
+  # Shared Database
+  postgres:
     image: postgres:17-alpine
-    container_name: iam-postgres
+    container_name: shared-postgres
     environment:
-      POSTGRES_DB: iam_db
+      POSTGRES_DB: microservices
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: bavui4444
     volumes:
-      - iam_db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./patient-service/database/init-patient-service.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "127.0.0.1:5432:5432"
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d iam_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d microservices"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # IAM Service
   iam-service:
     build:
       context: ./iam-service
       dockerfile: Dockerfile
     container_name: iam-service
     depends_on:
-      iam-db:
+      postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://iam-db:5432/iam_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -44,37 +46,16 @@ services:
     restart: unless-stopped
 
   # Patient Service
-  patient-db:
-    image: postgres:17-alpine
-    container_name: patient-postgres
-    environment:
-      POSTGRES_DB: patient
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: bavui4444
-    volumes:
-      - patient_db_data:/var/lib/postgresql/data
-      - ./patient-service/database/init-patient-service.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "127.0.0.1:5433:5432"
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d patient"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   patient-service:
     build:
       context: ./patient-service
       dockerfile: Dockerfile
     container_name: patient-service
     depends_on:
-      patient-db:
+      postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://patient-db:5432/patient
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -89,36 +70,16 @@ services:
     restart: unless-stopped
 
   # Test Order Service
-  testorder-db:
-    image: postgres:17-alpine
-    container_name: testorder-postgres
-    environment:
-      POSTGRES_DB: testorder
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: bavui4444
-    volumes:
-      - testorder_db_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5434:5432"
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d testorder"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   testorder-service:
     build:
       context: ./testorder-service
       dockerfile: Dockerfile
     container_name: testorder-service
     depends_on:
-      testorder-db:
+      postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://testorder-db:5432/testorder
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -132,9 +93,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  iam_db_data:
-  patient_db_data:
-  testorder_db_data:
+  postgres_data:
 
 networks:
   app-network:
