@@ -1,2 +1,52 @@
+iam-service   develop ?     ♥ 11:32 
+❯ cd ../patient-service
+󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32 
+❯ hx src/main/resources/application-prod.yml
+󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32   in 2s765ms
+❯ cd ../testorder-service
+󰌽 khoa …/microservices/testorder-service   develop ?     ♥ 11:32 
+❯ hx src/main/resources/application-prod.yml
+󰌽 khoa …/microservices/testorder-service   develop ?     ♥ 11:32   in 7s973ms
+❯ cd ../patient-service
+󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32 
+❯ cat .dockerignore
+# Maven
 target/
-.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test results
+*.tmp
+*.temp
+
+# CI/CD
+.gitlab-ci.yml
+*.md
+README.md
+
+# Database scripts
+database/
