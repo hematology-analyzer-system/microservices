@@ -30,7 +30,7 @@ USER appuser
 EXPOSE 8082
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8082/testorder/actuator/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["java", \
