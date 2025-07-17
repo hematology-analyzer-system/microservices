@@ -1,9 +1,11 @@
 package com.example.user.service;
 import com.example.user.dto.role.*;
 import com.example.user.exception.ResourceNotFoundException;
+import com.example.user.model.ModifiedHistory;
 import com.example.user.model.Privilege;
 import com.example.user.model.Role;
 import com.example.user.model.UserAuditInfo;
+import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.PrivilegeRepository;
 import com.example.user.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class RoleService {
     private final PrivilegeRepository privilegeRepository;
 
     private final AuditorAware<UserAuditInfo> auditorAware;
+    private final ModifiedHistoryRepository historyRepository;
 
     public Role createRole(Role role) {
         // Nếu role chưa có privilege nào được gán
@@ -79,6 +82,12 @@ public class RoleService {
         UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
         role.setUpdatedBy(currentUser);
         role.setUpdated_at(LocalDateTime.now());
+        if (currentUser != null) {
+            ModifiedHistory history = new ModifiedHistory();
+            history.setUpdatedAt(LocalDateTime.now());
+            history.setUpdatedBy(currentUser);
+            historyRepository.save(history);
+        }
         return roleRepository.save(role);
     }
     public void removePrivilegeFromRole(Long roleId, Long privilegeId) {
