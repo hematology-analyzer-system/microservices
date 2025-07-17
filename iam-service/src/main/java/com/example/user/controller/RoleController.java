@@ -71,7 +71,7 @@ public class RoleController {
         return ResponseEntity.ok(roleService.getAllRoles(page, size, sortBy, sortDirection));
     }
 
-    @PostMapping("/search")
+    @PostMapping("/filter")
     public ResponseEntity<PageRoleResponse> searchRoles(@RequestBody RoleRequest request) {
         return ResponseEntity.ok(roleService.searchRoles(request));
     }

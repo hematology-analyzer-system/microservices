@@ -28,7 +28,7 @@ public class CreateUserRequest {
 
     private String password;
     private String date_of_Birth;
-    private Integer age;
+//    private Integer age;
     public CreateUserRequest() {
     }
 
@@ -41,6 +41,6 @@ public class CreateUserRequest {
         this.gender = gender;
         this.password = password;
         this.date_of_Birth = date_of_Birth;
-        this.age = age;
+//        this.age = age;
     }
 }

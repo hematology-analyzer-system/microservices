@@ -8,8 +8,8 @@ public class RegisterRequest {
     private String email;
     private String phone;
     private String gender;
-    private String dateOfBirth;
-    private Integer age;
+    private String Date_of_Birth;
+//    private Integer age;
     private String address;
     private String password;
 //    private String status;

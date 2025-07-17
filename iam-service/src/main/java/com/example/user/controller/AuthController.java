@@ -160,8 +160,8 @@ public class AuthController {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setGender(request.getGender());
-        user.setDate_of_Birth(request.getDateOfBirth());
-        user.setAge(request.getAge());
+        user.setDate_of_Birth(request.getDate_of_Birth());
+//        user.setAge(request.getAge());
         user.setAddress(request.getAddress());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 //        user.setStatus(request.getStatus());

@@ -26,6 +26,6 @@ public class UpdateUserRequest {
         this.email = email;
         this.address = address;
         this.gender = gender;
-        this.age = age;
+//        this.age = age;
     }
 }

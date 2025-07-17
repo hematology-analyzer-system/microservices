@@ -36,7 +36,7 @@ public class UserService {
         user.setAddress(request.getAddress());
         user.setGender(request.getGender());
         user.setPassword(request.getPassword());
-        user.setAge(request.getAge());
+//        user.setAge(request.getAge());
         user.setDate_of_Birth(request.getDate_of_Birth());
         user.setCreate_at(LocalDateTime.now());
         user.setUpdate_at(LocalDateTime.now());
@@ -85,7 +85,7 @@ public class UserService {
         user.setEmail(dto.getEmail());
         user.setAddress(dto.getAddress());
         user.setGender(dto.getGender());
-        user.setAge(dto.getAge());
+//        user.setAge(dto.getAge());
         UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
         user.setUpdatedBy(currentUser);
         return userRepository.save(user);
@@ -112,7 +112,7 @@ public class UserService {
                         user.getPhone(),
                         user.getIdentifyNum(),
                         user.getGender(),
-                        user.getAge(),
+//                        user.getAge(),
                         user.getAddress(),
                         user.getDate_of_Birth()
 
