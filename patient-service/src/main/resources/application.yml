@@ -15,7 +15,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/patient-db
     username: postgres
-    password: trquth1209
+    password: bavui4444
 
 management:
   endpoints:

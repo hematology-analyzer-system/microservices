@@ -52,6 +52,8 @@ public class User implements UserDetails {
             @AttributeOverride(name = "userId", column = @Column(name = "created_by_userid")),
             @AttributeOverride(name = "identifyNum", column = @Column(name = "created_by_identify_num"))
     })
+
+
     private UserAuditInfo createdBy;
 
     @AttributeOverrides({
@@ -73,8 +75,12 @@ public class User implements UserDetails {
         this.update_at = LocalDateTime.now();
     }
 
+<<<<<<< Updated upstream
     @ManyToMany(fetch = FetchType.EAGER)
     @JsonIgnore
+=======
+    @ManyToMany(fetch = FetchType.LAZY)
+>>>>>>> Stashed changes
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))

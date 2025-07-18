@@ -86,5 +86,4 @@ public class UserController {
                 userService.getFilteredUsers(searchText, filter, sortBy, direction, offsetPage, limitOnePage)
         );
     }
-
 }

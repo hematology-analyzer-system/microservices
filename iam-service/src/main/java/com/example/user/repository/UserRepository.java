@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 //import java.lang.ScopedValue;
 import java.util.*;
@@ -30,5 +32,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByEmail(String email);
     boolean existsByPhone(String phone);
 
-
+    @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
+    @Query("SELECT u FROM User u WHERE u.email = :email")
+    User findByEmailWithoutAuditing(@Param("email") String email);
 }
