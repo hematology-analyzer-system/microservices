@@ -1,5 +1,6 @@
 package com.example.user.service;
 
+import com.example.user.dto.userdto.CustomUserDetails;
 import com.example.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,11 +16,18 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        var user = userRepository.findByEmail(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return user;
+        var user = userRepository.findByEmailWithRoles(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return new CustomUserDetails(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getIdentifyNum(),
+                user.getRoles(),  // đã fetch
+                user.getStatus()
+        );
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.user.security;
 
+import com.example.user.dto.userdto.CustomUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -139,7 +140,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.info("Username extracted from token: {}", username);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(username);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
@@ -147,7 +148,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("Authentication set in SecurityContext");
+                    log.info("Authentication set in SecurityContext for {}", userDetails.getEmail());
                 } else {
                     log.warn("Token is not valid");
                 }
