@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MinimalResultResponse {
+    private String paramName;
     private String value;
     private String unit;
 }

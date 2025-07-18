@@ -28,6 +28,8 @@ public class UserService {
             throw new IllegalArgumentException("Email already exists");
         }
 
+        System.out.println(request.getAddress() + " " + request.getIdentify_num());
+
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());

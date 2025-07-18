@@ -58,7 +58,7 @@ public class ResultService {
         CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getEmail()
+        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
 

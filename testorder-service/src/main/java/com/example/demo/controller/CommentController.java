@@ -3,12 +3,9 @@ package com.example.demo.controller;
 import com.example.demo.dto.Comment.AddCommentRequest;
 import com.example.demo.dto.Comment.CommentResponse;
 import com.example.demo.dto.Comment.UpdateCommentRequest;
-//import com.example.demo.repository.CommentRepository;
-import com.example.demo.security.CurrentUser;
 import com.example.demo.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,38 +17,61 @@ public class CommentController {
 //    @Autowired
 //    private CommentRepository commentRepository;
 
-    @PostMapping("add")
-    public ResponseEntity<CommentResponse> addComment(
+    @PostMapping("addTO/{id}")
+    public ResponseEntity<CommentResponse> addCommentTO(
+            @PathVariable Long id,
             @RequestBody AddCommentRequest addCommentRequest
     ){
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
 
-        CommentResponse commentResponse = commentService.addComment(currentUser.getUserId(), addCommentRequest);
+        CommentResponse commentResponse = commentService.addCommentTO(id, addCommentRequest);
 
         return ResponseEntity.ok(commentResponse);
     }
 
-    @PutMapping("/{commentId}")
+    @PostMapping("addResult/{id}")
+    public ResponseEntity<CommentResponse> addCommentResult(
+            @PathVariable Long id,
+            @RequestBody AddCommentRequest addCommentRequest
+    ){
+
+        CommentResponse commentResponse = commentService.addCommentResult(id, addCommentRequest);
+
+        return ResponseEntity.ok(commentResponse);
+    }
+
+    @PutMapping("/result/{commentId}")
     public ResponseEntity<CommentResponse> updateComment(
             @PathVariable("commentId") Long commentId,
             @RequestBody UpdateCommentRequest updateCommentRequest
     ){
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
 
-        CommentResponse commentResponse = commentService.modifiedComment(commentId, currentUser.getUserId(), updateCommentRequest);
+        CommentResponse commentResponse = commentService.modifiedComment(commentId, updateCommentRequest);
 
         return ResponseEntity.ok(commentResponse);
     }
 
-    @DeleteMapping("/{commentId}")
+    @PutMapping("/testorder/{commentId}")
+    public ResponseEntity<CommentResponse> updateCommentTO(
+            @PathVariable("commentId") Long commentId,
+            @RequestBody UpdateCommentRequest updateCommentRequest
+    ){
+
+        CommentResponse commentResponse = commentService.modifiedCommentTO(commentId, updateCommentRequest);
+
+        return ResponseEntity.ok(commentResponse);
+    }
+
+    @DeleteMapping("/reslut/{commentId}")
     public String deleteComment(
             @PathVariable("commentId") Long commentId
     ){
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
+        return  commentService.deleteComment(commentId);
+    }
 
-        return  commentService.deleteComment(currentUser.getUserId(), commentId);
+    @DeleteMapping("/testorder/{commentId}")
+    public String deleteCommentTO(
+            @PathVariable("commentId") Long commentId
+    ){
+        return  commentService.deleteCommentTO(commentId);
     }
 }

@@ -1,14 +1,12 @@
 package com.example.demo.service;
 
 import com.example.demo.config.JwtProperties;
+import com.example.demo.dto.Comment.MinimalCommentResponse;
 import com.example.demo.dto.Result.MinimalResultResponse;
 import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
-import com.example.demo.entity.Comment;
-import com.example.demo.entity.Patient;
-import com.example.demo.entity.Result;
-import com.example.demo.entity.TestOrder;
+import com.example.demo.entity.*;
 import com.example.demo.exception.ApiException;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
@@ -24,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -36,22 +35,51 @@ public class TestOrderService {
 
     private TOResponse toResponse(TestOrder testOrder) {
         Patient patient = testOrder.getPatient();
-        Comment comment = testOrder.getComment();
 
-        List<MinimalResultResponse> resultResponses = testOrder.getResults().stream()
+        List<CommentTO> comment = testOrder.getCommentTO();
+
+        List<Result> temp = testOrder.getResults();
+
+        // Map Result thanh MinResultDTO
+        List<MinimalResultResponse> resultResponses = temp.stream()
                 .map(result -> {
                     MinimalResultResponse res = new MinimalResultResponse();
+                    res.setParamName(result.getParameterName());
                     res.setValue(result.getValue());
                     res.setUnit(result.getUnit());
                     return res;
                 })
                 .collect(Collectors.toList());
 
+        // Map CommentTestOrder thanh DTO
+        List<MinimalCommentResponse> commentResponses = comment.stream()
+                .map(t -> {
+                    MinimalCommentResponse res = new MinimalCommentResponse();
+                    res.setContent(t.getContent());
+                    res.setCreatedBy(t.getCreateBy());
+                    res.setUpdateBy(t.getUpdateBy());
+                    return res;
+                })
+                .collect(Collectors.toList());
+
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
 
         return TOResponse.builder()
                 .status(testOrder.getStatus())
+                .updateBy(formatlizeCreatedBy(
+                        currentUser.getUserId(),
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        currentUser.getIdentifyNum()
+                ))
                 .runBy(testOrder.getRunBy())
                 .runAt(testOrder.getRunAt())
+
+                .results(resultResponses)
+
+                .comments(commentResponses)
+
                 .fullName(patient.getFullName())
                 .address(patient.getAddress())
                 .gender(patient.getGender())
@@ -82,8 +110,6 @@ public class TestOrderService {
         patient.setPhone(updateTO.getPhone());
         patient.setDateOfBirth(updateTO.getDateOfBirth());
 
-        testOrderRepository.save(testOrder);
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
@@ -93,6 +119,8 @@ public class TestOrderService {
                 currentUser.getEmail(),
                 currentUser.getIdentifyNum()
         ));
+
+        testOrderRepository.save(testOrder);
 
         return toResponse(testOrder);
     }
@@ -112,7 +140,7 @@ public class TestOrderService {
         if(keyword == null || keyword.isBlank()){
             testOrderPage = testOrderRepository.findAll(pageable);
         }else{
-            testOrderPage = testOrderRepository.findByPatientNameContainingIgnoreCase(keyword, pageable);
+            testOrderPage = testOrderRepository.findByPatient_FullNameContainingIgnoreCase(keyword, pageable);
         }
 
         List<TOResponse> testorderResponses = testOrderPage.getContent().stream()

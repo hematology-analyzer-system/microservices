@@ -1,6 +1,7 @@
 package com.example.demo.dto.TestOrder;
 
 import com.example.demo._enum.Gender;
+import com.example.demo.dto.Comment.MinimalCommentResponse;
 import com.example.demo.dto.Result.MinimalResultResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +19,7 @@ import java.util.List;
 public class TOResponse {
     private String status;
 
-    private String createdBy;
+    private String updateBy;
 
     private String runBy;
 
@@ -34,7 +35,7 @@ public class TOResponse {
 
     //Comment involve
 
-    private String content;
+    private List<MinimalCommentResponse> comments;
 
 
 
