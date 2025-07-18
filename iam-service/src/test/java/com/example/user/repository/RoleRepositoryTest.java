@@ -1,6 +1,6 @@
 package com.example.user.repository;
 
-import com.example.user.DataInitializer;
+//import com.example.user.DataInitializer;
 import com.example.user.config.AuditTestConfig;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;

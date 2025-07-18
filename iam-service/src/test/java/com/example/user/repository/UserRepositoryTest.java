@@ -42,7 +42,7 @@ public class UserRepositoryTest {
         newUser.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         newUser.setGender("Nam");
         newUser.setPassword("123123123");
-        newUser.setAge(32);
+//        newUser.setAge(32);
         newUser.setDate_of_Birth("1/1/1992");
         newUser.setCreate_at(LocalDateTime.now());
         newUser.setUpdate_at(LocalDateTime.now());

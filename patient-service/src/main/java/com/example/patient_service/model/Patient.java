@@ -52,4 +52,9 @@ public class Patient {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    private String createdBy;
+
+    private String updateBy;
+
 }
