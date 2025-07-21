@@ -37,14 +37,14 @@ public class CustomUserDetailsServiceTest {
     }
 
     @Test
-    public void UserServiceTest_loadUserByUsername_ReturnsUserDetails_WhenUserExists() {
+    public void CustomUserDetailsServiceTest_loadUserByUsername_ReturnsUserDetails_WhenUserExists() {
         // Arrange
         String email = "test@example.com";
         User user = new User();
         user.setEmail(email);
         user.setPassword("password");
 
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(user);
+        Mockito.when(userRepository.findByEmailWithRoles(email)).thenReturn(Optional.of(user));
 
         // Act
         UserDetails result = customUserDetailsService.loadUserByUsername(email);
@@ -52,21 +52,21 @@ public class CustomUserDetailsServiceTest {
         // Assert
         Assertions.assertThat(result).isNotNull();
         Assertions.assertThat(result.getUsername()).isEqualTo(email);
-        Mockito.verify(userRepository, Mockito.times(1)).findByEmail(email);
+        Mockito.verify(userRepository, Mockito.times(1)).findByEmailWithRoles(email);
     }
 
     @Test
-    public void UserServiceTest_loadUserByUsername_ThrowsException_WhenUserNotFound() {
+    public void CustomUserDetailsServiceTest_loadUserByUsername_ThrowsException_WhenUserNotFound() {
         // Arrange
         String email = "notfound@example.com";
-        Mockito.when(userRepository.findByEmail(email)).thenReturn(null);
+        Mockito.when(userRepository.findByEmailWithRoles(email)).thenReturn(Optional.empty());
 
         // Act & Assert
         Assertions.assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername(email))
                 .isInstanceOf(UsernameNotFoundException.class)
                 .hasMessage("User not found");
 
-        Mockito.verify(userRepository, Mockito.times(1)).findByEmail(email);
+        Mockito.verify(userRepository, Mockito.times(1)).findByEmailWithRoles(email);
     }
 
 

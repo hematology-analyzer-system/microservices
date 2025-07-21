@@ -2,13 +2,12 @@ package com.example.user.service;
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
-import com.example.user.model.Privilege;
-import com.example.user.model.User;
-import com.example.user.model.Role;
-import com.example.user.model.UserAuditInfo;
+import com.example.user.model.*;
+import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
@@ -21,6 +20,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AuditorAware<UserAuditInfo> auditorAware;
+    private final ModifiedHistoryRepository historyRepository;
 
 
     public User createUser(CreateUserRequest request) {
@@ -88,6 +88,15 @@ public class UserService {
 //        user.setAge(dto.getAge());
         UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
         user.setUpdatedBy(currentUser);
+        user.setUpdate_at(LocalDateTime.now());
+        if (currentUser != null) {
+            ModifiedHistory history = new ModifiedHistory();
+            history.setUpdatedAt(LocalDateTime.now());
+            history.setUpdatedBy(currentUser);
+
+            historyRepository.save(history);
+        }
+
         return userRepository.save(user);
     }
 
@@ -214,5 +223,4 @@ public class UserService {
             return dto;
         });
     }
-
 }

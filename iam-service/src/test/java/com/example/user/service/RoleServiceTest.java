@@ -2,11 +2,13 @@ package com.example.user.service;
 
 import com.example.user.dto.role.PageRoleResponse;
 import com.example.user.dto.role.RoleRequest;
+import com.example.user.dto.role.RoleSearchDTO;
 import com.example.user.dto.role.UpdateRoleRequest;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Privilege;
 import com.example.user.model.Role;
 import com.example.user.model.UserAuditInfo;
+import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.PrivilegeRepository;
 import com.example.user.repository.RoleRepository;
 import org.assertj.core.api.Assertions;
@@ -18,9 +20,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +39,9 @@ public class RoleServiceTest {
     @Mock
     private AuditorAware<UserAuditInfo> auditorAware;
 
+    @Mock
+    private ModifiedHistoryRepository modifiedHistoryRepository;
+
     @InjectMocks
     private RoleService roleService;
 
@@ -44,6 +52,25 @@ public class RoleServiceTest {
                         99L, "Test User", "test@example.com", "999999999"
                 )));
     }
+
+    private Privilege createPrivilege(Long id,String code, String description) {
+        Privilege privilege = new Privilege();
+        privilege.setPrivilegeId(id);
+        privilege.setCode(code);
+        privilege.setDescription(description);
+        return privilegeRepository.save(privilege);
+    }
+
+    private Role createRole(Long id, String name, String code, String description, Set<Privilege> privileges) {
+        Role role = new Role();
+        role.setRoleId(id);
+        role.setName(name);
+        role.setCode(code);
+        role.setDescription(description);
+        role.setPrivileges(privileges);
+        return roleRepository.save(role);
+    }
+
 
 
     @Test
@@ -58,7 +85,7 @@ public class RoleServiceTest {
         readOnlyPrivilege.setDescription("Default read-only privilege");
 
         when(privilegeRepository.findByCode("READ_ONLY")).thenReturn(Optional.of(readOnlyPrivilege));
-        when(roleRepository.save(Mockito.any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         Role result = roleService.createRole(role);
@@ -71,7 +98,7 @@ public class RoleServiceTest {
                 .containsExactly("READ_ONLY");
 
         Mockito.verify(privilegeRepository).findByCode("READ_ONLY");
-        Mockito.verify(roleRepository).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository).save(any(Role.class));
     }
 
     @Test
@@ -86,7 +113,7 @@ public class RoleServiceTest {
         role.setCode("ADMIN");
         role.setPrivileges(Set.of(customPrivilege));
 
-        when(roleRepository.save(Mockito.any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         Role result = roleService.createRole(role);
@@ -206,7 +233,7 @@ public class RoleServiceTest {
 
         when(roleRepository.findById(role.getRoleId())).thenReturn(Optional.of(role));
         when(privilegeRepository.findById(privilege.getPrivilegeId())).thenReturn(Optional.of(privilege));
-        when(roleRepository.save(Mockito.any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         roleService.assignPrivilegeToRole(role.getRoleId(), privilege.getPrivilegeId());
@@ -219,7 +246,7 @@ public class RoleServiceTest {
 
         Mockito.verify(roleRepository).findById(role.getRoleId());
         Mockito.verify(privilegeRepository).findById(privilege.getPrivilegeId());
-        Mockito.verify(roleRepository).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository).save(any(Role.class));
     }
 
     @Test
@@ -236,8 +263,8 @@ public class RoleServiceTest {
                 .hasMessageContaining("Role not found with id = '1'");
 
         Mockito.verify(roleRepository).findById(roleId);
-        Mockito.verify(privilegeRepository, Mockito.never()).findById(Mockito.any());
-        Mockito.verify(roleRepository, Mockito.never()).save(Mockito.any());
+        Mockito.verify(privilegeRepository, Mockito.never()).findById(any());
+        Mockito.verify(roleRepository, Mockito.never()).save(any());
     }
 
     @Test
@@ -255,7 +282,7 @@ public class RoleServiceTest {
         updateDto.setDescription("New Description");
 
         when(roleRepository.findById(roleId)).thenReturn(Optional.of(existingRole));
-        when(roleRepository.save(Mockito.any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         Role updatedRole = roleService.updateRole(roleId, updateDto);
@@ -266,7 +293,7 @@ public class RoleServiceTest {
         Assertions.assertThat(updatedRole.getDescription()).isEqualTo("New Description");
 
         Mockito.verify(roleRepository).findById(roleId);
-        Mockito.verify(roleRepository).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository).save(any(Role.class));
     }
 
     @Test
@@ -285,7 +312,7 @@ public class RoleServiceTest {
                 .hasMessageContaining("Role not found");
 
         Mockito.verify(roleRepository).findById(roleId);
-        Mockito.verify(roleRepository, Mockito.never()).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository, Mockito.never()).save(any(Role.class));
     }
 
     @Test
@@ -305,7 +332,7 @@ public class RoleServiceTest {
 
         when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
         when(privilegeRepository.findById(privilegeId)).thenReturn(Optional.of(privilege));
-        when(roleRepository.save(Mockito.any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         roleService.removePrivilegeFromRole(roleId, privilegeId);
@@ -315,7 +342,7 @@ public class RoleServiceTest {
 
         Mockito.verify(roleRepository).findById(roleId);
         Mockito.verify(privilegeRepository).findById(privilegeId);
-        Mockito.verify(roleRepository).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository).save(any(Role.class));
     }
 
     @Test
@@ -333,7 +360,7 @@ public class RoleServiceTest {
 
         Mockito.verify(roleRepository).findById(roleId);
         Mockito.verify(privilegeRepository, Mockito.never()).findById(Mockito.anyLong());
-        Mockito.verify(roleRepository, Mockito.never()).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository, Mockito.never()).save(any(Role.class));
     }
 
     @Test
@@ -356,7 +383,7 @@ public class RoleServiceTest {
 
         Mockito.verify(roleRepository).findById(roleId);
         Mockito.verify(privilegeRepository).findById(privilegeId);
-        Mockito.verify(roleRepository, Mockito.never()).save(Mockito.any(Role.class));
+        Mockito.verify(roleRepository, Mockito.never()).save(any(Role.class));
     }
 
     @Test
@@ -516,5 +543,83 @@ public class RoleServiceTest {
         Mockito.verify(roleRepository).findByNameContainingIgnoreCase("nonexistent", pageable);
     }
 
+    @Test
+    void RoleServiceTest_getFilteredRoles_shouldReturnAllRolesWhenNoSearchTextOrFilter() {
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Role r1 = createRole(1L, "Admin", "ADMIN", "admin role", Collections.emptySet());
+        Role r2 = createRole(2L, "User", "USER", "user role", Collections.emptySet());
+        List<Role> roles = List.of(r1, r2);
+
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
+        when(roleRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(roles, pageable, roles.size()));
+
+        Page<RoleSearchDTO> result = roleService.getFilteredRoles(null, null, "name", "asc", 1, 10);
+
+        Assertions.assertThat(result).isNotNull();
+        Assertions.assertThat(result.getTotalElements()).isEqualTo(2);
+        Assertions.assertThat(result.getContent()).extracting(RoleSearchDTO::getName)
+                .containsExactlyInAnyOrder("Admin", "User");
+    }
+
+    @Test
+    void RoleServiceTest_getFilteredRoles_shouldFilterByNameInMap() {
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Role r = createRole(1L, "Editor", "EDT", "editing", Collections.emptySet());
+        Map<String, String> filter = Map.of("name", "Editor");
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
+
+        when(roleRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(r), pageable, 1));
+
+        Page<RoleSearchDTO> result = roleService.getFilteredRoles(null, filter, "name", "asc", 1, 10);
+
+        Assertions.assertThat(result.getTotalElements()).isEqualTo(1);
+        Assertions.assertThat(result.getContent().getFirst().getName()).isEqualTo("Editor");
+    }
+
+    @Test
+    void RoleServiceTest_getFilteredRoles_shouldFilterBySearchTextInNameCodeDescription() {
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Role r = createRole(1L, "Moderator", "MOD", "Moderates", Collections.emptySet());
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
+
+        when(roleRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(r), pageable, 1));
+
+        Page<RoleSearchDTO> result = roleService.getFilteredRoles("mod", null, "name", "asc", 1, 10);
+
+        Assertions.assertThat(result.getContent()).hasSize(1);
+        Assertions.assertThat(result.getContent().getFirst().getCode()).isEqualTo("MOD");
+    }
+
+    @Test
+    void RoleServiceTest_getFilteredRoles_shouldFilterByPrivilegeDescription() {
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(privilegeRepository.save(any(Privilege.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Privilege p = createPrivilege(1L, "READ", "read access");
+        Role r = createRole(1L, "Reader", "READER", "can read", Set.of(p));
+        Map<String, String> filter = Map.of("privilege", "read");
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
+
+        when(roleRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(r), pageable, 1));
+
+        Page<RoleSearchDTO> result = roleService.getFilteredRoles(null, filter, "name", "asc", 1, 10);
+
+        Assertions.assertThat(result.getTotalElements()).isEqualTo(1);
+        Assertions.assertThat(result.getContent().getFirst().getName()).isEqualTo("Reader");
+    }
+
+    @Test
+    void RoleServiceTest_getFilteredRoles_shouldReturnEmptyPageWhenNoMatch() {
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("name"));
+        when(roleRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(Page.empty());
+
+        Page<RoleSearchDTO> result = roleService.getFilteredRoles("no-match", null, "name", "asc", 1, 10);
+
+        Assertions.assertThat(result).isEmpty();
+    }
 
 }

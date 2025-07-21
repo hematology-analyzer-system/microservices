@@ -5,12 +5,14 @@ import com.example.patient_service.dto.PatientRecordResponse;
 import com.example.patient_service.dto.UpdatePatientRequest;
 import com.example.patient_service.model.Patient;
 import com.example.patient_service.repository.PatientRepository;
+import com.example.patient_service.security.CurrentUser;
 import com.example.patient_service.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,9 +20,17 @@ import org.springframework.stereotype.Service;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
+    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+        return String.format(
+                "ID: %d | Name: %s | Email: %s | IdNum: %s",
+                id, name, email, identifyNum
+        );
+    }
 
     @Override
     public PatientRecordResponse addPatientRecord(AddPatientRequest request) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
         Patient newPatient = Patient.builder()
                 .fullName(request.getFullName())
                 .address(request.getAddress())
@@ -28,7 +38,21 @@ public class PatientServiceImpl implements PatientService {
                 .phone(request.getPhone())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
+                .createdBy(formatlizeCreatedBy(
+                        currentUser.getUserId(),
+                        currentUser.getUsername(),
+                        currentUser.getEmail(),
+                        currentUser.getIdentifyNum()
+                ))
+                .updateBy(formatlizeCreatedBy(
+                        currentUser.getUserId(),
+                        currentUser.getUsername(),
+                        currentUser.getEmail(),
+                        currentUser.getIdentifyNum()
+                ))
                 .build();
+
+
 
         patientRepository.save(newPatient);
 
@@ -56,6 +80,16 @@ public class PatientServiceImpl implements PatientService {
         updatedPatient.setPhone(request.getPhone());
         updatedPatient.setDateOfBirth(request.getDateOfBirth());
         updatedPatient.setGender(request.getGender());
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        updatedPatient.setUpdateBy(formatlizeCreatedBy(
+                currentUser.getUserId(),
+                currentUser.getUsername(),
+                currentUser.getEmail(),
+                currentUser.getIdentifyNum()
+        ));
+
 
         patientRepository.save(updatedPatient);
 
