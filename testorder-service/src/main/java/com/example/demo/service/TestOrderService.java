@@ -2,7 +2,9 @@ package com.example.demo.service;
 
 import com.example.demo.config.JwtProperties;
 import com.example.demo.dto.Comment.MinimalCommentResponse;
+import com.example.demo.dto.DetailResult.DetailResultResponse;
 import com.example.demo.dto.Result.MinimalResultResponse;
+import com.example.demo.dto.TestOrder.AddTORequest;
 import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
@@ -10,11 +12,13 @@ import com.example.demo.dto.search.SearchDTO;
 import com.example.demo.entity.*;
 import com.example.demo.exception.ApiException;
 import com.example.demo.exception.BadRequestException;
+import com.example.demo.repository.PatientRepository;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import lombok.AllArgsConstructor;
+import org.aspectj.weaver.ast.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.domain.Page;
@@ -29,9 +33,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -42,34 +44,56 @@ public class TestOrderService {
     @Autowired
     private TestOrderRepository testOrderRepository;
 
+    @Autowired
+    private PatientRepository  patientRepository;
+
     private TOResponse toResponse(TestOrder testOrder) {
         Patient patient = testOrder.getPatient();
 
         List<CommentTO> comment = testOrder.getCommentTO();
-
         List<Result> temp = testOrder.getResults();
 
-        // Map Result thanh MinResultDTO
-        List<MinimalResultResponse> resultResponses = temp.stream()
-                .map(result -> {
-                    MinimalResultResponse res = new MinimalResultResponse();
-                    res.setParamName(result.getParameterName());
-                    res.setValue(result.getValue());
-                    res.setUnit(result.getUnit());
-                    return res;
-                })
-                .collect(Collectors.toList());
+        List<MinimalResultResponse> resultResponses = null;
+        List<MinimalCommentResponse> commentResponses = null;
 
+        // Map Result thanh MinResultDTO
+        if(temp != null) {
+            resultResponses = temp.stream()
+                    .map(result -> {
+                        List<DetailResultResponse> detailResponses = result.getDetailResults().stream()
+                                .map(detail -> {
+                                    DetailResultResponse d = new DetailResultResponse();
+                                    d.setParamName(detail.getParamName());
+                                    d.setUnit(detail.getUnit());
+                                    d.setValue(detail.getValue());
+                                    d.setRangeMin(detail.getRangeMin());
+                                    d.setRangeMax(detail.getRangeMax());
+
+                                    return d;
+                                }).collect(Collectors.toList());
+
+                        MinimalResultResponse minimalResultResponse = new MinimalResultResponse();
+                        minimalResultResponse.setId(result.getResultId());
+                        minimalResultResponse.setReviewed(result.getReviewed());
+                        minimalResultResponse.setUpdateBy(result.getUpdateBy());
+                        minimalResultResponse.setDetailResults(detailResponses);
+
+                        return minimalResultResponse;
+                    })
+                    .collect(Collectors.toList());
+        }
         // Map CommentTestOrder thanh DTO
-        List<MinimalCommentResponse> commentResponses = comment.stream()
-                .map(t -> {
-                    MinimalCommentResponse res = new MinimalCommentResponse();
-                    res.setContent(t.getContent());
-                    res.setCreatedBy(t.getCreateBy());
-                    res.setUpdateBy(t.getUpdateBy());
-                    return res;
-                })
-                .collect(Collectors.toList());
+        if(comment != null) {
+            commentResponses = comment.stream()
+                    .map(t -> {
+                        MinimalCommentResponse res = new MinimalCommentResponse();
+                        res.setContent(t.getContent());
+                        res.setCreatedBy(t.getCreateBy());
+                        res.setUpdateBy(t.getUpdateBy());
+                        return res;
+                    })
+                    .collect(Collectors.toList());
+        }
 
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
@@ -102,6 +126,46 @@ public class TestOrderService {
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
         );
+    }
+
+    public TOResponse createTO(AddTORequest  addTORequest, Optional<Integer> id) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        Patient patient = null;
+        TestOrder testOrder = null;
+
+        if(id.isPresent()) {
+            patient = patientRepository.findById(id.get())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Patient not found"));
+        }
+        else {
+            patient = Patient.builder()
+                    .fullName(addTORequest.getFullName())
+                    .dateOfBirth(addTORequest.getDateOfBirth())
+                    .gender(addTORequest.getGender())
+                    .address(addTORequest.getAddress())
+                    .phone(addTORequest.getPhoneNumber())
+                    .email(addTORequest.getEmail())
+                    .build();
+
+            patientRepository.save(patient);
+        }
+
+        testOrder = TestOrder.builder()
+                .createdBy(createdByinString)
+                .status("PENDING")
+                .patient(patient)
+                .build();
+
+        patient.getTestOrders().add(testOrder);
+
+        patientRepository.save(patient);
+
+        return toResponse(testOrder);
     }
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO){

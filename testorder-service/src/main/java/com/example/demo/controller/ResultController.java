@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.DetailResult.DetailResultResponse;
 import com.example.demo.dto.Result.ResultResponse;
 import com.example.demo.dto.Result.ReviewResultRequest;
 import com.example.demo.repository.ResultRepository;
@@ -17,12 +18,21 @@ public class ResultController {
     @Autowired
     private ResultRepository resultRepository;
 
+    @PostMapping("/gen/{resultId}")
+    public ResponseEntity<ResultResponse> genResult(
+            @PathVariable("resultId") Long resultId
+    ){
+        ResultResponse resultResponse = resultService.genDetail(resultId);
+
+        return ResponseEntity.ok(resultResponse);
+    }
+
     @PutMapping("/{resultId}")
-    public ResponseEntity<ResultResponse> reviewedResult(
+    public ResponseEntity<DetailResultResponse> reviewedResult(
             @PathVariable("resultId")  Long resultId,
             @RequestBody ReviewResultRequest reviewResultRequest
             ){
-        ResultResponse resultResponse = resultService.reviewResult(resultId, reviewResultRequest);
+        DetailResultResponse resultResponse = resultService.reviewResult(resultId, reviewResultRequest);
 
         return  ResponseEntity.ok(resultResponse);
     }

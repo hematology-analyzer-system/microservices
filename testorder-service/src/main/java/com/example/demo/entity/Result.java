@@ -22,17 +22,7 @@ public class Result {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long resultId;
 
-    private String parameterName;
-
     private Boolean reviewed;
-
-    private String value;
-
-    private String unit;
-
-    private String rangeMin;
-
-    private String rangeMax;
 
     @Column(name = "updateBy")
     private String updateBy;
@@ -40,6 +30,9 @@ public class Result {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "test_order_id")
     private TestOrder testOrder;
+
+    @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DetailResult> detailResults = new ArrayList<>();
 
     @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comment = new ArrayList<>();

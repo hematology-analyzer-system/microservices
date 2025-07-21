@@ -1,9 +1,11 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.TestOrder.AddTORequest;
 import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
 import com.example.demo.dto.search.SearchDTO;
+import com.example.demo.entity.TestOrder;
 import com.example.demo.service.TestOrderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/testorder")
@@ -19,6 +22,26 @@ public class TestOrderController {
 
     @Autowired
     private TestOrderService testOrderService;
+
+    @PostMapping("/create")
+    public ResponseEntity<TOResponse> createWithoutId(
+            @Valid @RequestBody AddTORequest addTORequest
+    ) {
+
+        TOResponse toResponse = testOrderService.createTO(addTORequest, Optional.empty());
+
+        return ResponseEntity.ok(toResponse);
+    }
+
+    @PostMapping("/create/{id}")
+    public ResponseEntity<TOResponse> createWithId(
+            @PathVariable Integer id
+    ) {
+
+        TOResponse toResponse = testOrderService.createTO(null, Optional.of(id));
+
+        return ResponseEntity.ok(toResponse);
+    }
 
     @PutMapping("/{TOId}")
     public ResponseEntity<TOResponse> modifiedTestOrder(
