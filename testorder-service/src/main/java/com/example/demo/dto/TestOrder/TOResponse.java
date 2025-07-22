@@ -17,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class TOResponse {
+    private Long testId;
     private String status;
 
     private String updateBy;

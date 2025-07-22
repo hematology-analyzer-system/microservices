@@ -113,6 +113,7 @@ public class TestOrderService {
                 .getAuthentication().getDetails();
 
         return TOResponse.builder()
+                .testId(testOrder.getTestId())
                 .status(testOrder.getStatus())
                 .updateBy(formalizeCreatedBy(
                         currentUser.getUserId(),

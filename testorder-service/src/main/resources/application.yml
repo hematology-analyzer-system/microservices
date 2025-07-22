@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5434/MockTest_Sprint3
+    url: jdbc:postgresql://localhost:5432/testorder
     username: postgres
-    password: 611989
+    password: trquth1209
     driver-class-name: org.postgresql.Driver
 
   jpa:
