@@ -44,7 +44,7 @@ public class User implements UserDetails {
     @Column(name = "identifyNum", unique = true)
     private String identifyNum;
     private LocalDateTime update_at;
-    private LocalDateTime create_at;
+    private LocalDateTime createdAt;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "email", column = @Column(name = "created_by_email")),
@@ -64,8 +64,14 @@ public class User implements UserDetails {
     private UserAuditInfo updatedBy;
     @PrePersist
     protected void onCreate() {
-        this.create_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
         this.update_at = LocalDateTime.now();
+    }
+
+    public enum status {
+        ACTIVE,
+        PENDING_VERIFICATION,
+        INACTIVE
     }
 
     @PreUpdate

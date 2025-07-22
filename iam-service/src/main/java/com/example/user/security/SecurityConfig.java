@@ -57,9 +57,16 @@ public class SecurityConfig {
                 // No CORS configuration needed for backend-only
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Use the corsConfigurationSource bean
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+//                        .requestMatchers("/auth/**").permitAll()
 //                                .requestMatchers("/auth/register").permitAll()
 //                        .requestMatchers("/public/**").permitAll() // Add any other public endpoints
+                                .requestMatchers( "/auth/register",
+                                        "/auth/login",
+                                        "/auth/verify-otp",
+                                        "/auth/resend-otp",
+                                        "/auth/forgot-password",
+                                        "/auth/verify-reset-otp",
+                                        "/auth/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

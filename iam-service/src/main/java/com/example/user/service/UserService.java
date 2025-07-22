@@ -38,7 +38,7 @@ public class UserService {
         user.setPassword(request.getPassword());
 //        user.setAge(request.getAge());
         user.setDate_of_Birth(request.getDate_of_Birth());
-        user.setCreate_at(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
         user.setUpdate_at(LocalDateTime.now());
         UserAuditInfo audit = auditorAware.getCurrentAuditor().orElse(null);
         user.setCreatedBy(audit);
@@ -208,7 +208,7 @@ public class UserService {
             dto.setGender(user.getGender());
             dto.setStatus(user.getStatus());
             dto.setAddress(user.getAddress());
-            dto.setCreatedAt(user.getCreate_at() != null ? user.getCreate_at().toString() : null);
+            dto.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
             dto.setUpdatedAt(user.getUpdate_at() != null ? user.getUpdate_at().toString() : null);
 
             dto.setRoles(user.getRoles().stream()
