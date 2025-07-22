@@ -11,7 +11,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -54,5 +56,6 @@ public class Patient {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<TestOrder> testOrders = new HashSet<>();
+    @Builder.Default
+    private List<TestOrder> testOrders = new ArrayList<>();
 }

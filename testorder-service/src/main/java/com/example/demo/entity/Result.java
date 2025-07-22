@@ -1,10 +1,17 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -19,18 +26,20 @@ public class Result {
 
     private Boolean reviewed;
 
-    private String value;
+    @Column(name = "updateBy")
+    private String updateBy;
 
-    private String unit;
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    private String rangeMin;
-
-    private String rangeMax;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "test_order_id")
     private TestOrder testOrder;
 
-    @OneToOne(mappedBy = "result", cascade = CascadeType.ALL)
-    private Comment comment;
+    @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DetailResult> detailResults = new ArrayList<>();
+
+    @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comment = new ArrayList<>();
 }

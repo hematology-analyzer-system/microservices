@@ -1,10 +1,9 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -14,8 +13,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "comments")
-public class Comment {
+
+@EqualsAndHashCode(exclude = "testOrder")
+@ToString(exclude = "testOrder")
+
+public class CommentTO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long commentId;
@@ -35,8 +37,7 @@ public class Comment {
     @Column(name = "updateBy")
     private String updateBy;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "result_id")
-    private Result result;
-
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_order_id")
+    private TestOrder testOrder;
 }

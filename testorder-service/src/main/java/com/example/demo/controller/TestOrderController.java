@@ -1,12 +1,20 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.TestOrder.AddTORequest;
+import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
+import com.example.demo.dto.search.SearchDTO;
+import com.example.demo.entity.TestOrder;
 import com.example.demo.service.TestOrderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/testorder")
@@ -14,6 +22,26 @@ public class TestOrderController {
 
     @Autowired
     private TestOrderService testOrderService;
+
+    @PostMapping("/create")
+    public ResponseEntity<TOResponse> createWithoutId(
+            @Valid @RequestBody AddTORequest addTORequest
+    ) {
+
+        TOResponse toResponse = testOrderService.createTO(addTORequest, Optional.empty());
+
+        return ResponseEntity.ok(toResponse);
+    }
+
+    @PostMapping("/create/{id}")
+    public ResponseEntity<TOResponse> createWithId(
+            @PathVariable Integer id
+    ) {
+
+        TOResponse toResponse = testOrderService.createTO(null, Optional.of(id));
+
+        return ResponseEntity.ok(toResponse);
+    }
 
     @PutMapping("/{TOId}")
     public ResponseEntity<TOResponse> modifiedTestOrder(
@@ -31,5 +59,41 @@ public class TestOrderController {
         testOrderService.deteleTestOrder(TOId);
 
         return "Deleted successfully";
+    }
+
+    @GetMapping("/{TOId}")
+    public ResponseEntity<TOResponse> viewDetailTestOrder(
+            @PathVariable Long TOId
+    ){
+        TOResponse toResponse = testOrderService.viewDetail(TOId);
+
+        return ResponseEntity.ok(toResponse);
+    }
+
+    @GetMapping("search")
+    public ResponseEntity<PageTOResponse> searchTestOrder(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "runAt") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction
+    ){
+        PageTOResponse pageTOResponse = testOrderService.searchTestOrder(page, size, sortBy, direction, keyword);
+
+        return ResponseEntity.ok(pageTOResponse);
+    }
+
+    @GetMapping("filter")
+    public ResponseEntity<Page<SearchDTO>> filterTestOrder(
+            @RequestParam(required = false) String searchText,
+            @RequestParam(required = false) Map<String, Object> filter,
+            @RequestParam(defaultValue = "runAt") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(defaultValue = "1") int offsetPage,
+            @RequestParam(defaultValue = "12") int limitOnePage
+    ){
+        Page<SearchDTO> pageSearch = testOrderService.getFilterTO(searchText, filter, sortBy, direction, offsetPage, limitOnePage);
+
+        return ResponseEntity.ok(pageSearch);
     }
 }
