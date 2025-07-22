@@ -30,7 +30,7 @@ public class CommentService {
 
     private ResultRepository resultRepository;
 
-    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
@@ -45,7 +45,7 @@ public class CommentService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
         CommentTO comment = CommentTO.builder()
@@ -71,7 +71,7 @@ public class CommentService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
         Comment comment = Comment.builder()
@@ -99,7 +99,7 @@ public class CommentService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
         if (!comment.getUserId().equals(currentUser.getUserId())) {
@@ -127,7 +127,7 @@ public class CommentService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
         if (!comment.getUserId().equals(currentUser.getUserId())) {

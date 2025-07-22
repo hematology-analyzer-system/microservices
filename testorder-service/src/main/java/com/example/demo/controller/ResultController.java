@@ -18,11 +18,11 @@ public class ResultController {
     @Autowired
     private ResultRepository resultRepository;
 
-    @PostMapping("/gen/{resultId}")
+    @PostMapping("/gen/{testorderId}")
     public ResponseEntity<ResultResponse> genResult(
-            @PathVariable("resultId") Long resultId
+            @PathVariable("testorderId") Long testorderId
     ){
-        ResultResponse resultResponse = resultService.genDetail(resultId);
+        ResultResponse resultResponse = resultService.genDetail(testorderId);
 
         return ResponseEntity.ok(resultResponse);
     }

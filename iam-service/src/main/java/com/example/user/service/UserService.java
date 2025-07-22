@@ -2,13 +2,12 @@ package com.example.user.service;
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
-import com.example.user.model.Privilege;
-import com.example.user.model.User;
-import com.example.user.model.Role;
-import com.example.user.model.UserAuditInfo;
+import com.example.user.model.*;
+import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
@@ -21,14 +20,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AuditorAware<UserAuditInfo> auditorAware;
+    private final ModifiedHistoryRepository historyRepository;
 
 
     public User createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
-
-        System.out.println(request.getAddress() + " " + request.getIdentify_num());
 
         User user = new User();
         user.setFullName(request.getFullName());
@@ -38,7 +36,7 @@ public class UserService {
         user.setAddress(request.getAddress());
         user.setGender(request.getGender());
         user.setPassword(request.getPassword());
-        user.setAge(request.getAge());
+//        user.setAge(request.getAge());
         user.setDate_of_Birth(request.getDate_of_Birth());
         user.setCreate_at(LocalDateTime.now());
         user.setUpdate_at(LocalDateTime.now());
@@ -87,9 +85,18 @@ public class UserService {
         user.setEmail(dto.getEmail());
         user.setAddress(dto.getAddress());
         user.setGender(dto.getGender());
-        user.setAge(dto.getAge());
+//        user.setAge(dto.getAge());
         UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
         user.setUpdatedBy(currentUser);
+        user.setUpdate_at(LocalDateTime.now());
+        if (currentUser != null) {
+            ModifiedHistory history = new ModifiedHistory();
+            history.setUpdatedAt(LocalDateTime.now());
+            history.setUpdatedBy(currentUser);
+
+            historyRepository.save(history);
+        }
+
         return userRepository.save(user);
     }
 
@@ -114,7 +121,7 @@ public class UserService {
                         user.getPhone(),
                         user.getIdentifyNum(),
                         user.getGender(),
-                        user.getAge(),
+//                        user.getAge(),
                         user.getAddress(),
                         user.getDate_of_Birth()
 
@@ -216,5 +223,4 @@ public class UserService {
             return dto;
         });
     }
-
 }

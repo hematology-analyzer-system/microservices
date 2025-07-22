@@ -1,6 +1,9 @@
 package com.example.user.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -15,6 +18,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
+@ToString(exclude = {"createdBy", "updatedBy", "roles"})
+@EqualsAndHashCode(exclude = {"createdBy", "updatedBy", "roles"})
 @Entity
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "phone"),
@@ -32,7 +37,7 @@ public class User implements UserDetails {
     private String phone;
     private String gender;
     private String Date_of_Birth;
-    private Integer Age;
+//    private Integer Age;
     private String address;
     private String password;
     private String status;
@@ -69,6 +74,7 @@ public class User implements UserDetails {
     }
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))

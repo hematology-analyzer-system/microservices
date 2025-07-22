@@ -72,11 +72,24 @@ public class TestOrderService {
                                     return d;
                                 }).collect(Collectors.toList());
 
+                        List<MinimalCommentResponse> commentResult = result.getComment().stream()
+                                .map( detail -> {
+                                    MinimalCommentResponse d = new MinimalCommentResponse();
+                                    d.setUpdateBy(detail.getUpdateBy());
+                                    d.setContent(detail.getContent());
+                                    d.setCreatedBy(detail.getCreateBy());
+                                    d.setCreatedAt(detail.getCreatedAt());
+
+                                    return d;
+                                }).toList();
+
                         MinimalResultResponse minimalResultResponse = new MinimalResultResponse();
                         minimalResultResponse.setId(result.getResultId());
                         minimalResultResponse.setReviewed(result.getReviewed());
                         minimalResultResponse.setUpdateBy(result.getUpdateBy());
                         minimalResultResponse.setDetailResults(detailResponses);
+                        minimalResultResponse.setComment_result(commentResult);
+                        minimalResultResponse.setCreatedAt(result.getCreatedAt());
 
                         return minimalResultResponse;
                     })
@@ -90,6 +103,7 @@ public class TestOrderService {
                         res.setContent(t.getContent());
                         res.setCreatedBy(t.getCreateBy());
                         res.setUpdateBy(t.getUpdateBy());
+                        res.setCreatedAt(t.getCreatedAt());
                         return res;
                     })
                     .collect(Collectors.toList());
@@ -100,7 +114,7 @@ public class TestOrderService {
 
         return TOResponse.builder()
                 .status(testOrder.getStatus())
-                .updateBy(formatlizeCreatedBy(
+                .updateBy(formalizeCreatedBy(
                         currentUser.getUserId(),
                         currentUser.getFullname(),
                         currentUser.getEmail(),
@@ -121,7 +135,7 @@ public class TestOrderService {
                 .build();
     }
 
-    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
@@ -132,30 +146,24 @@ public class TestOrderService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
-        Patient patient = null;
-        TestOrder testOrder = null;
+        Patient patient = id.map(pid -> patientRepository.findById(pid)
+                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Patient not found")))
+                .orElseGet(() -> {
+                    Patient newPatient = Patient.builder()
+                            .fullName(addTORequest.getFullName())
+                            .dateOfBirth(addTORequest.getDateOfBirth())
+                            .gender(addTORequest.getGender())
+                            .address(addTORequest.getAddress())
+                            .phone(addTORequest.getPhoneNumber())
+                            .email(addTORequest.getEmail())
+                            .build();
+                    return patientRepository.save(newPatient);
+                });
 
-        if(id.isPresent()) {
-            patient = patientRepository.findById(id.get())
-                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Patient not found"));
-        }
-        else {
-            patient = Patient.builder()
-                    .fullName(addTORequest.getFullName())
-                    .dateOfBirth(addTORequest.getDateOfBirth())
-                    .gender(addTORequest.getGender())
-                    .address(addTORequest.getAddress())
-                    .phone(addTORequest.getPhoneNumber())
-                    .email(addTORequest.getEmail())
-                    .build();
-
-            patientRepository.save(patient);
-        }
-
-        testOrder = TestOrder.builder()
+        TestOrder testOrder = TestOrder.builder()
                 .createdBy(createdByinString)
                 .status("PENDING")
                 .patient(patient)
@@ -186,7 +194,7 @@ public class TestOrderService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        testOrder.setUpdateBy(formatlizeCreatedBy(
+        testOrder.setUpdateBy(formalizeCreatedBy(
                 currentUser.getUserId(),
                 currentUser.getFullname(),
                 currentUser.getEmail(),

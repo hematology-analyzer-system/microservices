@@ -1,6 +1,7 @@
 package com.example.user.controller;
 
 import com.example.user.config.AuditTestConfig;
+import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.User;
@@ -35,6 +36,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.mockito.BDDMockito.*;
@@ -93,7 +95,7 @@ public class UserControllerTest {
         user.setGender(createUserRequest.getGender());
         user.setPassword(createUserRequest.getPassword());
         user.setDate_of_Birth(createUserRequest.getDate_of_Birth());
-        user.setAge(createUserRequest.getAge());
+//        user.setAge(createUserRequest.getAge());
 
         updateUserRequest = new UpdateUserRequest(
                 "John Updated",
@@ -276,7 +278,7 @@ public class UserControllerTest {
                         user.getPhone(),
                         user.getIdentifyNum(),
                         user.getGender(),
-                        user.getAge(),
+//                        user.getAge(),
                         user.getAddress(),
                         user.getDate_of_Birth()
 
@@ -315,7 +317,7 @@ public class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].phone").value(user.getPhone()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].identifyNum").value(user.getIdentifyNum()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].gender").value(user.getGender()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].age").value(user.getAge()))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].age").value(user.getAge()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].address").value(user.getAddress()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles[0].dateOfBirth").value(user.getDate_of_Birth()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value((int) userPage.getTotalElements()))
@@ -337,7 +339,7 @@ public class UserControllerTest {
         updatedUser.setEmail(updateUserRequest.getEmail());
         updatedUser.setAddress(updateUserRequest.getAddress());
         updatedUser.setGender(updateUserRequest.getGender());
-        updatedUser.setAge(updateUserRequest.getAge());
+//        updatedUser.setAge(updateUserRequest.getAge());
         updatedUser.setDate_of_Birth(updateUserRequest.getDate_of_Birth());
 
         given(userService.updateUser(eq(userId), any(UpdateUserRequest.class)))
@@ -355,7 +357,7 @@ public class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").value(updatedUser.getFullName()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(updatedUser.getEmail()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.gender").value(updatedUser.getGender()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.age").value(updatedUser.getAge()))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.age").value(updatedUser.getAge()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.address").value(updatedUser.getAddress()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.date_of_Birth").value(updatedUser.getDate_of_Birth()));
     }
@@ -379,6 +381,80 @@ public class UserControllerTest {
 
         // Verify service was called
         then(userService).should(times(1)).changePassword(eq(userId), any(ChangePasswordRequest.class));
+    }
+
+
+    @Test
+    public void UserController_filterUsers_ShouldReturnPagedUsers() throws Exception {
+        // Arrange
+        String searchText = "john";
+        String sortBy = "email";
+        String direction = "desc";
+        int offsetPage = 1;
+        int limitOnePage = 2;
+
+        searchDTO dto1 = new searchDTO();
+        dto1.setId(1L);
+        dto1.setFullName("John Doe");
+        dto1.setEmail("john@example.com");
+        dto1.setGender("Male");
+        dto1.setStatus("ACTIVE");
+        dto1.setPhone("0123456789");
+        dto1.setAddress("123 Main St");
+        dto1.setCreatedAt("2024-01-01T12:00:00");
+        dto1.setUpdatedAt("2024-01-10T12:00:00");
+        dto1.setRoles(Set.of("ADMIN"));
+        dto1.setPrivileges(Set.of("READ_PRIVILEGE", "WRITE_PRIVILEGE"));
+
+        searchDTO dto2 = new searchDTO();
+        dto2.setId(2L);
+        dto2.setFullName("Jane Smith");
+        dto2.setEmail("jane@example.com");
+        dto2.setGender("Female");
+        dto2.setStatus("INACTIVE");
+        dto2.setPhone("0987654321");
+        dto2.setAddress("456 Another Rd");
+        dto2.setCreatedAt("2024-02-01T09:00:00");
+        dto2.setUpdatedAt("2024-02-15T09:00:00");
+        dto2.setRoles(Set.of("USER"));
+        dto2.setPrivileges(Set.of("READ_PRIVILEGE"));
+
+        List<searchDTO> users = List.of(dto1, dto2);
+        Page<searchDTO> userPage = new PageImpl<>(users);
+
+        given(userService.getFilteredUsers(eq(searchText), anyMap(), eq(sortBy), eq(direction), eq(offsetPage), eq(limitOnePage)))
+                .willReturn(userPage);
+
+        // Act
+        ResultActions response = mockMvc.perform(get("/users/filter")
+                .param("searchText", searchText)
+                .param("sortBy", sortBy)
+                .param("direction", direction)
+                .param("offsetPage", String.valueOf(offsetPage))
+                .param("limitOnePage", String.valueOf(limitOnePage))
+                .contentType(MediaType.APPLICATION_JSON));
+
+        // Assert
+        response.andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content.length()").value(2))
+
+                // First user
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].fullName").value("John Doe"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].email").value("john@example.com"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].gender").value("Male"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].status").value("ACTIVE"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].roles[0]").value("ADMIN"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].privileges.length()").value(2))
+
+                // Second user
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].id").value(2))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].fullName").value("Jane Smith"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].email").value("jane@example.com"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].status").value("INACTIVE"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].roles[0]").value("USER"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].privileges.length()").value(1));
     }
 
 

@@ -35,64 +35,71 @@ public class DataInitializer {
         // Step 2: Fetch all privileges
         List<Privilege> savedPrivileges = privilegeRepository.findAll();
 
-        // ADMIN: all privileges
-        Role adminRole = createRoleIfNotFound(
-                "Administrator",
-                "Have right to access, add, update, and delete information in all services.",
-                "ADMIN",
-                new HashSet<>(savedPrivileges)
-        );
+        if (roleRepository.findAll().isEmpty()) {
+            // ADMIN: all privileges
+            Role adminRole = createRoleIfNotFound(
+                    "ADMIN",
+                    "System administrator with full access.",
+                    "ADMIN",
+                    new HashSet<>(savedPrivileges)
+            );
 
-        // MANAGER: IAM (user + role)
-        Set<Privilege> managerPrivileges = savedPrivileges.stream()
-                .filter(p -> Set.of(
-                        "VIEW_USER", "CREATE_USER", "MODIFY_USER", "DELETE_USER", "LOCK_UNLOCK_USER",
-                        "VIEW_ROLE", "CREATE_ROLE", "UPDATE_ROLE", "DELETE_ROLE"
-                ).contains(p.getCode()))
-                .collect(Collectors.toSet());
+            // MANAGER: IAM (user + role)
+            Set<Privilege> managerPrivileges = savedPrivileges.stream()
+                    .filter(p -> Set.of(
+                            "VIEW_USER", "CREATE_USER", "MODIFY_USER", "DELETE_USER", "LOCK_UNLOCK_USER",
+                            "VIEW_ROLE", "CREATE_ROLE", "UPDATE_ROLE", "DELETE_ROLE"
+                    ).contains(p.getCode()))
+                    .collect(Collectors.toSet());
 
-        Role managerRole = createRoleIfNotFound(
-                "Manager",
-                "Have right to manage users/roles in IAM",
-                "MANAGER",
-                managerPrivileges
-        );
+            Role managerRole = createRoleIfNotFound(
+                    "LAB_MANAGER",
+                    "Manager of laboratory operations.",
+                    "LAB_MANAGER",
+                    managerPrivileges
+            );
 
-        // SERVICE: QA + limited Monitoring
-        Set<Privilege> servicePrivileges = savedPrivileges.stream()
-                .filter(p -> Set.of(
-                        "VIEW_CONFIGURATION", "CREATE_CONFIGURATION", "MODIFY_CONFIGURATION", "DELETE_CONFIGURATION",
-                        "READ_ONLY"
-                ).contains(p.getCode()))
-                .collect(Collectors.toSet());
+//            // SERVICE: QA + limited Monitoring
+//            Set<Privilege> servicePrivileges = savedPrivileges.stream()
+//                    .filter(p -> Set.of(
+//                            "VIEW_CONFIGURATION", "CREATE_CONFIGURATION", "MODIFY_CONFIGURATION", "DELETE_CONFIGURATION",
+//                            "READ_ONLY"
+//                    ).contains(p.getCode()))
+//                    .collect(Collectors.toSet());
 
-        Role roleService = createRoleIfNotFound(
-                "Role Service",
-                "Have right to access, add, update, and delete information in Quality Assurance Service and limited in Monitoring Service",
-                "ROLE_SERVICE",
-                servicePrivileges
-        );
+//            Role roleService = createRoleIfNotFound(
+//                    "Role Service",
+//                    "Standard laboratory user.",
+//                    "ROLE_SERVICE",
+//                    servicePrivileges
+//            );
 
-        // LAB USERS: full PatientService, limited Monitoring
-        Set<Privilege> labUserPrivileges = savedPrivileges.stream()
-                .filter(p -> Set.of(
-                        "READ_ONLY", "CREATE_TEST_ORDER", "MODIFY_TEST_ORDER", "DELETE_TEST_ORDER", "REVIEW_TEST_ORDER",
-                        "ADD_COMMENT", "MODIFY_COMMENT", "DELETE_COMMENT"
-                ).contains(p.getCode()))
-                .collect(Collectors.toSet());
+            // LAB USERS: full PatientService, limited Monitoring
+            Set<Privilege> labUserPrivileges = savedPrivileges.stream()
+                    .filter(p -> Set.of(
+                            "READ_ONLY", "CREATE_TEST_ORDER", "MODIFY_TEST_ORDER", "DELETE_TEST_ORDER", "REVIEW_TEST_ORDER",
+                            "ADD_COMMENT", "MODIFY_COMMENT", "DELETE_COMMENT"
+                    ).contains(p.getCode()))
+                    .collect(Collectors.toSet());
 
-        Role labUserRole = createRoleIfNotFound(
-                "Lab User",
-                "Have right to manage patient data, limited access to Monitoring.",
-                "LAB_USER",
-                labUserPrivileges
-        );
+            Role labUserRole = createRoleIfNotFound(
+                    "LAB_USER",
+                    "Standard laboratory user.",
+                    "LAB_USER",
+                    labUserPrivileges
+            );
+            if (userRepository.findAll().isEmpty()) {
+                createUserIfNotFound("admin@example.com", "admin", "admin123", "00001", "00001", adminRole);
+                createUserIfNotFound("manager@example.com", "manager", "manager123", "00002", "00002", managerRole);
+//        createUserIfNotFound("service@example.com", "service", "service123", "00003", "00003", roleService);
+                createUserIfNotFound("labuser@example.com", "labuser", "lab123", "00004", "00004", labUserRole);
+            }
+        }
+
 
         // Step 3: Create default users for testing
-        createUserIfNotFound("admin@example.com", "admin", "admin123", "00001", "00001", adminRole);
-        createUserIfNotFound("manager@example.com", "manager", "manager123", "00002", "00002", managerRole);
-        createUserIfNotFound("service@example.com", "service", "service123", "00003", "00003", roleService);
-        createUserIfNotFound("labuser@example.com", "labuser", "lab123", "00004", "00004", labUserRole);
+
+
     }
 
     private Role createRoleIfNotFound(String name, String description, String code, Set<Privilege> privileges) {
@@ -116,7 +123,7 @@ public class DataInitializer {
             user.setPhone(phone);
             user.setGender("Male");
             user.setDate_of_Birth("1990-01-01");
-            user.setAge(Integer.valueOf(32));
+//            user.setAge(Integer.valueOf(32));
             user.setAddress("Default Address");
             user.setStatus("ACTIVE");
             user.setIdentifyNum(idNum);

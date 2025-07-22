@@ -25,7 +25,7 @@ public class ResultService {
     private ResultRepository resultRepository;
     private TestOrderRepository testOrderRepository;
 
-    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
@@ -95,7 +95,7 @@ public class ResultService {
         CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
         List<DetailResult> detailResults = genAllDetailResult(patient.getGender());
@@ -156,7 +156,7 @@ public class ResultService {
         CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
 
-        String createdByinString = formatlizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
 

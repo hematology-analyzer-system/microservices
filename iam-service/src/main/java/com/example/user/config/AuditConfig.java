@@ -29,7 +29,7 @@ public class AuditConfig {
             }
 
             String email = auth.getName(); // Spring Security mặc định là username/email
-            User user = userRepository.findByEmail(email); // ❗ vẫn trả về User
+            User user = userRepository.findByEmailWithoutAuditing(email);
             if (user == null) {
                 return Optional.empty(); // tránh NullPointerException
             }

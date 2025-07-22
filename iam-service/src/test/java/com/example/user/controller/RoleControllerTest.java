@@ -111,7 +111,7 @@ public class RoleControllerTest {
 
     @Test
     public void RoleController_create_ShouldReturnCreatedRole() throws Exception {
-        // Arrang
+        // Arrange
 
         given(roleService.createRole(Mockito.any(Role.class))).willReturn(role);
 
@@ -285,7 +285,7 @@ public class RoleControllerTest {
         given(roleService.searchRoles(roleRequest)).willReturn(pageRoleResponse);
 
         // Act & Assert
-        mockMvc.perform(post("/roles/search")
+        mockMvc.perform(post("/roles/filter")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(roleRequest)))
                 .andExpect(MockMvcResultMatchers.status().isOk())

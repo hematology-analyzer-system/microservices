@@ -56,5 +56,6 @@ public class Patient {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<TestOrder> testOrders = new ArrayList<>();
 }

@@ -8,6 +8,7 @@ import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.Role;
 import com.example.user.model.User;
 import com.example.user.model.UserAuditInfo;
+import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.RoleRepository;
 import com.example.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
@@ -43,6 +44,9 @@ public class UserServiceTest {
     @Mock
     private AuditorAware<UserAuditInfo> auditorAware;
 
+    @Mock
+    private ModifiedHistoryRepository modifiedHistoryRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -76,7 +80,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
@@ -110,7 +114,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
@@ -134,7 +138,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
@@ -240,7 +244,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
@@ -257,7 +261,7 @@ public class UserServiceTest {
         Assertions.assertThat(result).isNotNull();
         Assertions.assertThat(result.getFullName()).isEqualTo(dto.getFullName());
         Assertions.assertThat(result.getEmail()).isEqualTo(dto.getEmail());
-        Assertions.assertThat(result.getAge()).isEqualTo(dto.getAge());
+//        Assertions.assertThat(result.getAge()).isEqualTo(dto.getAge());
         Assertions.assertThat(result.getGender()).isEqualTo(dto.getGender());
         Assertions.assertThat(result.getAddress()).isEqualTo(dto.getAddress());
 
@@ -303,7 +307,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
@@ -334,7 +338,7 @@ public class UserServiceTest {
         User1.setAddress("12A Lý Thường Kiệt, quận 10, thành phố Hồ Chí Minh");
         User1.setGender("Nam");
         User1.setPassword("123123123");
-        User1.setAge(32);
+//        User1.setAge(32);
         User1.setDate_of_Birth("1/1/1992");
         User1.setCreate_at(LocalDateTime.now());
         User1.setUpdate_at(LocalDateTime.now());
