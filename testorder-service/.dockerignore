@@ -1,15 +1,3 @@
-iam-service   develop ?     ♥ 11:32 
-❯ cd ../patient-service
-󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32 
-❯ hx src/main/resources/application-prod.yml
-󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32   in 2s765ms
-❯ cd ../testorder-service
-󰌽 khoa …/microservices/testorder-service   develop ?     ♥ 11:32 
-❯ hx src/main/resources/application-prod.yml
-󰌽 khoa …/microservices/testorder-service   develop ?     ♥ 11:32   in 7s973ms
-❯ cd ../patient-service
-󰌽 khoa …/microservices/patient-service   develop ?     ♥ 11:32 
-❯ cat .dockerignore
 # Maven
 target/
 pom.xml.tag
