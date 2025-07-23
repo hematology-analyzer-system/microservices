@@ -321,13 +321,13 @@ public class TestOrderService {
         TestOrder testOrder = testOrderRepository.findById(id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
-        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-            throw new BadRequestException("Test Order Status is Not Completed");
-        }
-
-        if(testOrder.getResults().isEmpty()){
-            throw new BadRequestException("Test Order Results is empty!");
-        }
+//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+//            throw new BadRequestException("Test Order Status is Not Completed");
+//        }
+//
+//        if(testOrder.getResults().isEmpty()){
+//            throw new BadRequestException("Test Order Results is empty!");
+//        }
 
         return toResponse(testOrder);
     }
