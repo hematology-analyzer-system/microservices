@@ -1,8 +1,11 @@
 spring:
+<<<<<<< HEAD
   config:
     activate:
       on-profile: production
 
+=======
+>>>>>>> 1a44319 (chore(config): enable prod configs for iam-service and patient-service)
   application:
     name: iam-service
 
@@ -48,9 +51,12 @@ management:
   endpoint:
     health:
       show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
+<<<<<<< HEAD
   health:
     mail:
       enabled: false
+=======
+>>>>>>> 1a44319 (chore(config): enable prod configs for iam-service and patient-service)
   server:
     port: 8080
 
