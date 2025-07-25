@@ -67,7 +67,7 @@ public class SecurityConfig {
                                         "/auth/forgot-password",
                                         "/auth/verify-reset-otp",
                                         "/auth/reset-password").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

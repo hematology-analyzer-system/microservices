@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/roles")
@@ -20,8 +21,17 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<Role> create(@RequestBody Role role) {
-        return ResponseEntity.ok(roleService.createRole(role));
+    public ResponseEntity<UpdateRoleRequest> create(@RequestBody UpdateRoleRequest role) {
+        if (roleService.createRole(role).isPresent()) return ResponseEntity.ok(role);
+        else return ResponseEntity.badRequest().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UpdateRoleRequest> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest dto) {
+        dto.setRoleId(id);
+        Optional<UpdateRoleRequest> updated = roleService.updateRole(dto);
+        if (updated.isPresent()) return ResponseEntity.ok(dto);
+        else return ResponseEntity.badRequest().build();
     }
 
     @GetMapping
@@ -41,6 +51,7 @@ public class RoleController {
         roleService.deleteRole(id);
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/{roleId}/privileges/{privilegeId}")
     public ResponseEntity<String> assignPrivilegeToRole(
             @PathVariable Long roleId,
@@ -49,6 +60,7 @@ public class RoleController {
         roleService.assignPrivilegeToRole(roleId, privilegeId);
         return ResponseEntity.ok("Privilege assigned to role successfully.");
     }
+
     @DeleteMapping("/{roleId}/privileges/{privilegeId}")
     public ResponseEntity<String> removePrivilege(
             @PathVariable Long roleId,
@@ -56,11 +68,9 @@ public class RoleController {
         roleService.removePrivilegeFromRole(roleId, privilegeId);
         return ResponseEntity.ok("Privilege removed from role successfully.");
     }
-    @PutMapping("/{id}")
-    public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest dto) {
-        Role updated = roleService.updateRole(id, dto);
-        return ResponseEntity.ok(updated);
-    }
+
+
+
     @GetMapping("/paging")
     public ResponseEntity<PageRoleResponse> getAllPaged(
             @RequestParam(defaultValue = "0") int page,

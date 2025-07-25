@@ -71,7 +71,8 @@ public class User implements UserDetails {
     public enum status {
         ACTIVE,
         PENDING_VERIFICATION,
-        INACTIVE
+        INACTIVE,
+        PENDING_ACTIVATION // for admin create for user
     }
 
     @PreUpdate

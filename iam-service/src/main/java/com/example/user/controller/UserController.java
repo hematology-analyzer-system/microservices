@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> get(@PathVariable Long id) {
+    public ResponseEntity<FetchUserResponse> get(@PathVariable Long id) {
         return userService.getUserById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -43,11 +43,12 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-    @PostMapping("/{userId}/roles/{roleId}")
-    public ResponseEntity<String> assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
-        userService.assignRoleToUser(userId, roleId);
-        return ResponseEntity.ok("Role assigned to user successfully.");
-    }
+
+//    @PostMapping("/{userId}/roles/{roleId}")
+//    public ResponseEntity<String> assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
+//        userService.assignRoleToUser(userId, roleId);
+//        return ResponseEntity.ok("Role assigned to user successfully.");
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<PageUserResponse> searchUsers(
@@ -61,8 +62,10 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest dto) {
-        return ResponseEntity.ok(userService.updateUser(id, dto));
+    public ResponseEntity<FetchUserResponse> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest dto) {
+        return userService.FetchUserDetails(id, dto)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{userId}/change-password")

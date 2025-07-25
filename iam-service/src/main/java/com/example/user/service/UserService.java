@@ -1,4 +1,5 @@
 package com.example.user.service;
+import com.example.user.config.SchedulerConfig;
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
@@ -7,10 +8,15 @@ import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,7 +27,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final AuditorAware<UserAuditInfo> auditorAware;
     private final ModifiedHistoryRepository historyRepository;
-
+    private static final Logger log = (Logger) LoggerFactory.getLogger(UserService.class);
 
     public User createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -50,55 +56,105 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public Optional<FetchUserResponse> getUserById(Long id) {
+        User newUser = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        return  Optional.of(new FetchUserResponse(newUser, newUser.getUpdate_at(), newUser.getUpdatedBy().getEmail()));
     }
+
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
 
-    public void assignRoleToUser(Long userId, Long roleId) {
+    public boolean assignRoleToUser(Long userId, List<Long> roleIds) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId));
-
-        user.getRoles().add(role);
-        userRepository.save(user);
+        for (Long roleId : roleIds) {
+            user.getRoles().add(roleRepository.findById(roleId).orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId)));
+        }
+        return true;
     }
+
+    public List<Long> getAllRolesById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        return user.getRoles().stream().map(Role::getRoleId).collect(Collectors.toList());
+    }
+
+    public boolean removeRoleFromUser(Long userId, List<Long> roleIds) {
+        User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        return user.getRoles().removeIf(role -> roleIds.contains(role.getRoleId()));
+    }
+
+    public Optional<FetchUserResponse> FetchUserDetails(Long userId, UpdateUserRequest dto) {
+//        userId = 67L;
+        Long finalUserId = userId;
+        User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", finalUserId));
+
+        if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("INACTIVE") || user.getStatus().equals("PENDING_ACTIVATION")) {
+             throw new IllegalArgumentException("Invalid user status");
+         }
+         user.setFullName(dto.getFullName());
+         user.setEmail(dto.getEmail());
+         user.setGender(dto.getGender());
+         user.setPhone(dto.getPhone());
+         user.setDate_of_Birth(dto.getDate_of_Birth());
+         user.setAddress(dto.getAddress());
+         user.setStatus(dto.getStatus());
+         user.setIdentifyNum(dto.getIdentifyNum());
+
+         List<Long> roleIds = dto.getRoleIds();
+         List<Long> roleIdsFromResquest = getAllRolesById(userId);
+
+         log.info("Size : " + String.valueOf(roleIds.size()));
+
+         if (removeRoleFromUser(userId, roleIdsFromResquest) || roleIdsFromResquest.isEmpty()) {
+             if (assignRoleToUser(userId, roleIds)) {
+                 userRepository.save(user);
+                 User newUser = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", finalUserId));
+                 return  Optional.of(new FetchUserResponse(newUser, newUser.getUpdate_at(),newUser.getUpdatedBy().getEmail()));
+             }
+             else if (roleIds.isEmpty()) {
+                 user.setStatus("INACTIVE");
+                 userRepository.save(user);
+                 User newUser = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", finalUserId));
+                 return  Optional.of(new FetchUserResponse(newUser, newUser.getUpdate_at(),newUser.getUpdatedBy().getEmail()));
+             }
+         }
+        return Optional.empty();
+    }
+
     public List<User> searchUsersByName(String namePart) {
         return userRepository.findByFullNameContainingIgnoreCase(namePart);
     }
-//    public List<UserResponse> searchUserByName(String keyword) {
-//        return userRepository.searchByName(keyword);
+
+//    public User updateUser(Long id, UpdateUserRequest dto) {
+//        User user = userRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//        if (!user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
+//            throw new IllegalArgumentException("Email already exists");
+//        }
+//        user.setFullName(dto.getFullName());
+//        user.setDate_of_Birth(dto.getDate_of_Birth());
+//        user.setEmail(dto.getEmail());
+//        user.setAddress(dto.getAddress());
+//        user.setGender(dto.getGender());
+////        user.setAge(dto.getAge());
+//        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
+//        user.setUpdatedBy(currentUser);
+//        user.setUpdate_at(LocalDateTime.now());
+//        if (currentUser != null) {
+//            ModifiedHistory history = new ModifiedHistory();
+//            history.setUpdatedAt(LocalDateTime.now());
+//            history.setUpdatedBy(currentUser);
+//
+//            historyRepository.save(history);
+//        }
+//
+//        return userRepository.save(user);
 //    }
-    public User updateUser(Long id, UpdateUserRequest dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        user.setFullName(dto.getFullName());
-        user.setDate_of_Birth(dto.getDate_of_Birth());
-        user.setEmail(dto.getEmail());
-        user.setAddress(dto.getAddress());
-        user.setGender(dto.getGender());
-//        user.setAge(dto.getAge());
-        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
-        user.setUpdatedBy(currentUser);
-        user.setUpdate_at(LocalDateTime.now());
-        if (currentUser != null) {
-            ModifiedHistory history = new ModifiedHistory();
-            history.setUpdatedAt(LocalDateTime.now());
-            history.setUpdatedBy(currentUser);
-
-            historyRepository.save(history);
-        }
-
-        return userRepository.save(user);
-    }
 
     public PageUserResponse searchUsers(int page, int size, String keyword, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("desc") ?
