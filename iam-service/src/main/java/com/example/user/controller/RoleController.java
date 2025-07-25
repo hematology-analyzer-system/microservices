@@ -22,7 +22,11 @@ public class RoleController {
 
     @PostMapping
     public ResponseEntity<UpdateRoleRequest> create(@RequestBody UpdateRoleRequest role) {
-        if (roleService.createRole(role).isPresent()) return ResponseEntity.ok(role);
+        if (roleService.createRole(role).isPresent()) {
+            // Return the created role
+            rabbitTemplate.convertAndSend("appExchange", "role.create", "Role created: " + role.getName());
+            return ResponseEntity.ok(role);
+        }
         else return ResponseEntity.badRequest().build();
     }
 
