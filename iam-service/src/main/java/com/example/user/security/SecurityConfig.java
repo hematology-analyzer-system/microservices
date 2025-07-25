@@ -80,7 +80,9 @@ public class SecurityConfig {
                         "/auth/resend-otp",
                         "/auth/forgot-password",
                         "/auth/verify-reset-otp",
-                        "/auth/reset-password"
+                        "/auth/reset-password",
+                        "/actuator/health",
+                        "/actuator/info"
                     )
                     .permitAll()
                     .anyRequest()
