@@ -1,13 +1,6 @@
 package com.example.user.service;
 import com.example.user.config.SchedulerConfig;
-<<<<<<< HEAD
-<<<<<<< HEAD
 import com.example.user.controller.AuthController;
-=======
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
-import com.example.user.controller.AuthController;
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
@@ -28,16 +21,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-=======
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -49,10 +34,6 @@ public class UserService {
     private final AuditorAware<UserAuditInfo> auditorAware;
     private final ModifiedHistoryRepository historyRepository;
     private static final Logger log = (Logger) LoggerFactory.getLogger(UserService.class);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
     @Autowired
@@ -60,11 +41,6 @@ public class UserService {
 
     String defaultMalePic = "/images/defaultMale.png";
     String defaultFemalePic = "/images/defaultFemale.png";
-<<<<<<< HEAD
-=======
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -174,14 +150,7 @@ public class UserService {
         emailService.sendEmail(email, subject, emailBody);
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
-
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
     public Optional<FetchUserResponse> getUserById(Long id) {
         User newUser = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return  Optional.of(new FetchUserResponse(newUser, newUser.getUpdate_at(), newUser.getUpdatedBy().getEmail()));
@@ -214,34 +183,14 @@ public class UserService {
     }
 
     public Optional<FetchUserResponse> FetchUserDetails(Long userId, UpdateUserRequest dto) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-//        userId = 67L;
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
         Long finalUserId = userId;
         User user =  userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", finalUserId));
 
-<<<<<<< HEAD
-<<<<<<< HEAD
         if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("PENDING_ACTIVATION")) {
              throw new IllegalArgumentException("Invalid user status");
          }
 
-=======
-        if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("INACTIVE") || user.getStatus().equals("PENDING_ACTIVATION")) {
-             throw new IllegalArgumentException("Invalid user status");
-         }
->>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
-=======
-        if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("PENDING_ACTIVATION")) {
-             throw new IllegalArgumentException("Invalid user status");
-         }
-
->>>>>>> 1a38ff0 (fix(iam): fix RGAB)
          user.setFullName(dto.getFullName());
          user.setEmail(dto.getEmail());
          user.setGender(dto.getGender());

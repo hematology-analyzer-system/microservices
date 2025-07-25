@@ -68,6 +68,7 @@ public class RoleService {
         return new UpdateRoleRequest(role.getRoleId(), role.getCode(), role.getName(), role.getDescription(), privilegeIds);
     }
 
+<<<<<<< HEAD
     public Set<Long> getAllPrivilegesIds(List<Long> roleIds) {
         Set<Long> prilegeIds = new HashSet<>();
         for (Long roleId : roleIds) {
@@ -79,6 +80,8 @@ public class RoleService {
         return prilegeIds;
     }
 
+=======
+>>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
     public void removePrivileges(Long roleId, List<Long> privilegeIds) {
         try {
             Optional<Role> roleOptional = roleRepository.findById(roleId);

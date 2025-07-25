@@ -64,6 +64,7 @@ public class UserController {
         Files.copy(file.getInputStream(), path);
 
         String publicUrl = "http://localhost:8080/upload/images/" + filename;
+        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", "Profile picture uploaded: " + publicUrl);
         return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
     }
 
