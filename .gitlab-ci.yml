@@ -27,5 +27,6 @@ stages:
 
 # Include service-specific CI configurations
 include:
-  - local: 'iam-service/.gitlab-ci.yml'
-  - local: 'patient-service/.gitlab-ci.yml'
+  - local: "iam-service/.gitlab-ci.yml"
+  - local: "patient-service/.gitlab-ci.yml"
+  - local: "testorder-service/.gitlab-ci.yml"

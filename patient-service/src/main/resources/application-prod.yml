@@ -1,4 +1,8 @@
 spring:
+  config:
+    activate:
+      on-profile: production
+
   application:
     name: patient-service
 
