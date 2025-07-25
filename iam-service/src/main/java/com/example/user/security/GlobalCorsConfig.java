@@ -13,11 +13,17 @@ public class GlobalCorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // allow all paths
-                        .allowedOrigins("http://localhost:3000") // frontend URL
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+                registry
+                    .addMapping("/**") // allow all paths
+                    .allowedOrigins(
+                        "http://localhost:3000",
+                        "https://healthcare-group-2.netlify.app",
+                        "https://netlify.khoa.email",
+                        "https://healthcare.khoa.email"
+                    ) // frontend URL
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                    .allowedHeaders("*")
+                    .allowCredentials(true);
             }
         };
     }
