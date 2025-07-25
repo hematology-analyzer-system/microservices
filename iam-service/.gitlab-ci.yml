@@ -48,7 +48,7 @@ build-iam-service:
     paths:
       - iam-service/.m2/repository/
 
-# Test IAM Service
+# Test IAM Service (Optional - Manual trigger until tests are written)
 test-iam-service:
   <<: *iam-service-changes
   stage: test

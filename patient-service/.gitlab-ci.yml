@@ -47,7 +47,7 @@ build-patient-service:
     paths:
       - patient-service/.m2/repository/
 
-# Test Patient Service (Optional - Manual trigger until tests are written)
+# Test Patient Service
 test-patient-service:
   <<: *patient-service-changes
   stage: test
@@ -83,6 +83,7 @@ test-patient-service:
   when: manual # Make tests optional until they are written
   allow_failure: true # Don't block pipeline if tests fail
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Package Patient Service - Full Docker Build
 =======
@@ -154,6 +155,9 @@ code-quality-patient-service:
 
 # # Package Patient Service - Full Docker Build
 >>>>>>> e90f622 (ci(patient-service): un-comment package job and adjust formatting in .gitlab-ci.yml)
+=======
+# Package Patient Service - Full Docker Build
+>>>>>>> ac3914a (chore(ci): cleanup GitLab pipelines and disable mail health check)
 package-patient-service:
   <<: *patient-service-changes
   stage: package
