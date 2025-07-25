@@ -44,6 +44,9 @@ management:
   endpoint:
     health:
       show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
+  health:
+    mail:
+      enabled: false
   server:
     port: 8080
 
