@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/testorder
     username: postgres
-    password: bavui4444
+    password: trquth1209
     driver-class-name: org.postgresql.Driver
 
   jpa:

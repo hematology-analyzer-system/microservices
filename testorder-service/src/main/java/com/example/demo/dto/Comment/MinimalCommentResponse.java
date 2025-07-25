@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class MinimalCommentResponse {
+    private Long id;
     private String content;
     private String createdBy;
     private String updateBy;

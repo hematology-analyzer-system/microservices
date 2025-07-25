@@ -13,9 +13,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/patient
+    url: jdbc:postgresql://localhost:5432/patient-db
     username: postgres
-    password: bavui4444
+    password: trquth1209
 
 management:
   endpoints:
@@ -24,7 +24,7 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never
+      show-details: always
 
 server:
   port: 8081
