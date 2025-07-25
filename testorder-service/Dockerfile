@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Spring Boot Test Order Service
 # Stage 1: Build stage
-FROM maven:3.9.4-eclipse-temurin-21 AS builder
+FROM maven:3.9.4-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
@@ -22,8 +22,8 @@ RUN addgroup -g 1001 -S appgroup && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=appuser:appgroup /app/target/demo-0.0.1-SNAPSHOT.war app.jar
-# COPY --from=builder --chown=appuser:appgroup /app/target/*.jar app.jar
+COPY --from=build --chown=appuser:appgroup /app/target/demo-0.0.1-SNAPSHOT.war app.jar
+# COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
 
 USER appuser
 
