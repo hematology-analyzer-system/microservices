@@ -71,8 +71,11 @@ public class RoleController {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 1a38ff0 (fix(iam): fix RGAB)
+=======
+>>>>>>> b0b8fb6 (Intergrating RabbitMQ in project)
 //    @DeleteMapping("/{roleId}/privileges/{privilegeId}")
 //    public ResponseEntity<String> removePrivilege(
 //            @PathVariable Long roleId,
@@ -88,7 +91,10 @@ public class RoleController {
         rabbitTemplate.convertAndSend("appExchange", "role.assignPrivilege", "Assigned privilege " + privilegeId + " to role " + roleId);
         return ResponseEntity.ok("Privilege assigned to role successfully.");
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> b0b8fb6 (Intergrating RabbitMQ in project)
     @DeleteMapping("/{roleId}/privileges/{privilegeId}")
     public ResponseEntity<String> removePrivilege(
             @PathVariable Long roleId,
@@ -98,12 +104,16 @@ public class RoleController {
         return ResponseEntity.ok("Privilege removed from role successfully.");
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> b0b8fb6 (Intergrating RabbitMQ in project)
     @PutMapping("/{id}")
     public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest dto) {
         Role updated = roleService.updateRole(id, dto);
         return ResponseEntity.ok(updated);
     }
 >>>>>>> 06c6b8d (Intergrating RabbitMQ in project)
+<<<<<<< HEAD
 =======
 
 
@@ -111,6 +121,8 @@ public class RoleController {
 >>>>>>> 1a38ff0 (fix(iam): fix RGAB)
 
 >>>>>>> 1acd5c3 (fix(iam): fix feature assign role and create role)
+=======
+>>>>>>> b0b8fb6 (Intergrating RabbitMQ in project)
     @GetMapping("/paging")
     public ResponseEntity<PageRoleResponse> getAllPaged(
             @RequestParam(defaultValue = "0") int page,
