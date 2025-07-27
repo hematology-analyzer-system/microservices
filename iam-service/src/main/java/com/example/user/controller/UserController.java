@@ -23,9 +23,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate) {
         this.userService = userService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @PostMapping
@@ -49,6 +51,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userService.deleteUser(id);
+        rabbitTemplate.convertAndSend("appExchange", "user.delete", "User deleted: id=" + id);
         return ResponseEntity.noContent().build();
     }
 
