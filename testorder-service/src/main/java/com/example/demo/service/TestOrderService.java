@@ -271,30 +271,56 @@ public class TestOrderService {
             spec = spec.and((root, query, cb) -> {
                 Join<TestOrder, Patient> patientJoin = root.join("patient", JoinType.LEFT);
 
-                return cb.or(
-//                        cb.like(cb.lower(root.get("status")), search),
-//                        cb.like(cb.lower(root.get("runBy")), search),
-//                        cb.like(cb.lower(root.get("createdBy")), search),
-                        cb.like(cb.lower(patientJoin.get("fullName")), search)
-                );
+                return
+                        cb.like(cb.lower(patientJoin.get("fullName")), search);
             });
         }
 
         //Filter
         if (filter != null && !filter.isEmpty()) {
             if(filter.containsKey("fromDate")){
-                LocalDateTime fromDate = LocalDateTime.parse(filter.get("fromDate").toString());
-                spec = spec.and((root, query, cb) ->
-                        cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
+                LocalDateTime fromDate;
+                try {
+                    // Handle both LocalDateTime string and date string formats
+                    String fromDateStr = filter.get("fromDate").toString();
+                    if (fromDateStr.contains("T")) {
+                        // Already in LocalDateTime format
+                        fromDate = LocalDateTime.parse(fromDateStr);
+                    } else {
+                        // Convert date string to LocalDateTime (start of day)
+                        fromDate = LocalDate.parse(fromDateStr).atStartOfDay();
+                    }
+
+                    spec = spec.and((root, query, cb) ->
+                            cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
+                } catch (Exception e) {
+                    // Log error but continue without this filter
+                    System.err.println("Error parsing fromDate: " + filter.get("fromDate"));
+                }
             }
 
             if(filter.containsKey("toDate")){
-                LocalDateTime toDate = LocalDateTime.parse(filter.get("toDate").toString());
-                spec = spec.and((root, query, cb) ->
-                        cb.lessThanOrEqualTo(root.get("runAt"), toDate));
-            }
+                LocalDateTime toDate;
+                try {
+                    // Handle both LocalDateTime string and date string formats
+                    String toDateStr = filter.get("toDate").toString();
+                    if (toDateStr.contains("T")) {
+                        // Already in LocalDateTime format
+                        toDate = LocalDateTime.parse(toDateStr);
+                    } else {
+                        // Convert date string to LocalDateTime (end of day)
+                        toDate = LocalDate.parse(toDateStr).atTime(23, 59, 59);
+                    }
 
+                    spec = spec.and((root, query, cb) ->
+                            cb.lessThanOrEqualTo(root.get("runAt"), toDate));
+                } catch (Exception e) {
+                    // Log error but continue without this filter
+                    System.err.println("Error parsing toDate: " + filter.get("toDate"));
+                }
+            }
         }
+
 
         Page<TestOrder>  testOrders = testOrderRepository.findAll(spec, pageable);
 
