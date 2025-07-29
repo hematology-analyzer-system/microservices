@@ -32,6 +32,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
+        rabbitTemplate.convertAndSend("appExchange", "user.create", "User created: " + request.getFullName());
         return userService.createUser(request);
     }
 
