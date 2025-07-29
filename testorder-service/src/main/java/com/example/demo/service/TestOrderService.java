@@ -75,6 +75,7 @@ public class TestOrderService {
                         List<MinimalCommentResponse> commentResult = result.getComment().stream()
                                 .map( detail -> {
                                     MinimalCommentResponse d = new MinimalCommentResponse();
+                                    d.setId(detail.getCommentId());
                                     d.setUpdateBy(detail.getUpdateBy());
                                     d.setContent(detail.getContent());
                                     d.setCreatedBy(detail.getCreateBy());
@@ -100,6 +101,7 @@ public class TestOrderService {
             commentResponses = comment.stream()
                     .map(t -> {
                         MinimalCommentResponse res = new MinimalCommentResponse();
+                        res.setId(t.getCommentId());
                         res.setContent(t.getContent());
                         res.setCreatedBy(t.getCreateBy());
                         res.setUpdateBy(t.getUpdateBy());
@@ -270,9 +272,9 @@ public class TestOrderService {
                 Join<TestOrder, Patient> patientJoin = root.join("patient", JoinType.LEFT);
 
                 return cb.or(
-                        cb.like(cb.lower(root.get("status")), search),
-                        cb.like(cb.lower(root.get("runBy")), search),
-                        cb.like(cb.lower(root.get("createdBy")), search),
+//                        cb.like(cb.lower(root.get("status")), search),
+//                        cb.like(cb.lower(root.get("runBy")), search),
+//                        cb.like(cb.lower(root.get("createdBy")), search),
                         cb.like(cb.lower(patientJoin.get("fullName")), search)
                 );
             });

@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
@@ -131,6 +132,27 @@ public class ResultService {
                 .resultList(detailResultResponses)
                 .build();
     }
+    @Transactional
+    public List<DetailResultResponse> updateAllDetails(
+            Long resultId,
+            List<ReviewResultRequest> reqs
+    ) {
+        // 1. Lấy result và testOrder
+        Result result = resultRepository.findById(resultId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Result not found"));
+        TestOrder testOrder = result.getTestOrder();
+
+        // 2. Chạy reviewResult trên từng detail
+        List<DetailResultResponse> responses = reqs.stream()
+                .map(r -> reviewResult(resultId, r))
+                .collect(Collectors.toList());
+
+        // 3. Sau khi đã review hết, đánh dấu cả testOrder là REVIEWED
+        testOrder.setStatus("REVIEWED");
+        testOrderRepository.save(testOrder);
+
+        return responses;
+    }
 
     public DetailResultResponse reviewResult (Long resultId, ReviewResultRequest reviewResultRequest){
         Result result = resultRepository.findById(resultId)
@@ -164,11 +186,8 @@ public class ResultService {
         result.setReviewed(true);
         result.setUpdateBy(createdByinString);
 
-        testOrder.setStatus("REVIEWED");
-
-
         resultRepository.save(result);
-        testOrderRepository.save(testOrder);
+
 
         return DetailResultResponse.builder()
                 .paramName(d.getParamName())

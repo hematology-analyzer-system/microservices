@@ -61,7 +61,7 @@ public class CommentController {
         return ResponseEntity.ok(commentResponse);
     }
 
-    @DeleteMapping("/reslut/{commentId}")
+    @DeleteMapping("/result/{commentId}")
     public String deleteComment(
             @PathVariable("commentId") Long commentId
     ){
