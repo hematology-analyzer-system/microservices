@@ -28,27 +28,6 @@ public class RoleService {
     private final AuditorAware<UserAuditInfo> auditorAware;
     private final ModifiedHistoryRepository historyRepository;
 
-//    public Role createRole(Role role) {
-//        // Nếu role chưa có privilege nào được gán
-//        if (role.getPrivileges() == null || role.getPrivileges().isEmpty()) {
-//            Privilege readOnly = privilegeRepository.findByCode("READ_ONLY")
-//                    .orElseGet(() -> {
-//                        Privilege p = new Privilege();
-//                        p.setCode("READ_ONLY");
-//                        p.setDescription("Default read-only privilege");
-//                        return privilegeRepository.save(p);
-//                    });
-//
-//            role.setPrivileges(Set.of(readOnly));
-//        }
-//        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
-//        role.setCreatedBy(currentUser);
-//        role.setUpdatedBy(currentUser);
-//        role.setCreated_at(LocalDateTime.now());
-//        role.setUpdated_at(LocalDateTime.now());
-//        return roleRepository.save(role);
-//    }
-
     public Optional<UpdateRoleRequest> createRole(UpdateRoleRequest dto) {
         Role role = new Role();
         applyRoleData(role, dto);
@@ -87,6 +66,17 @@ public class RoleService {
                 .toList();
 
         return new UpdateRoleRequest(role.getRoleId(), role.getCode(), role.getName(), role.getDescription(), privilegeIds);
+    }
+
+    public Set<Long> getAllPrivilegesIds(List<Long> roleIds) {
+        Set<Long> prilegeIds = new HashSet<>();
+        for (Long roleId : roleIds) {
+            Set<Privilege> privilegeSet = roleRepository.findPrivilegesByRoleId(roleId);
+            if (privilegeSet != null) {
+                prilegeIds.addAll(privilegeSet.stream().map(Privilege::getPrivilegeId).collect(Collectors.toSet()));
+            }
+        }
+        return prilegeIds;
     }
 
     public void removePrivileges(Long roleId, List<Long> privilegeIds) {

@@ -25,6 +25,7 @@ public class UpdateUserRequest {
     private String status;
     @NotBlank
     private String identifyNum;
+//    private String profilePic;
 
     private List<Long> roleIds;
 

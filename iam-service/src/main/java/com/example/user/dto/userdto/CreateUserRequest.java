@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class CreateUserRequest {
@@ -20,7 +21,7 @@ public class CreateUserRequest {
     private String phone;
 
     @NotBlank
-    private String identify_num;
+    private String identifyNum;
 
     private String address;
 
@@ -28,19 +29,20 @@ public class CreateUserRequest {
 
     private String password;
     private String date_of_Birth;
-//    private Integer age;
+    private List<Long> roleIds;
+
     public CreateUserRequest() {
     }
 
-    public CreateUserRequest(String fullName, String email, String phone,String identify_num, String address, String gender, String password, String date_of_Birth, Integer age ) {
+    public CreateUserRequest(String fullName, String email, String phone,String identifyNum, String address, String gender, String password, String date_of_Birth, List<Long> roleIds) {
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
-        this.identify_num = identify_num;
+        this.identifyNum = identifyNum;
         this.address = address;
         this.gender = gender;
         this.password = password;
         this.date_of_Birth = date_of_Birth;
-//        this.age = age;
+        this.roleIds = roleIds;
     }
 }

@@ -8,9 +8,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
+
 import com.example.user.dto.search.searchDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -22,14 +29,15 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> create(@RequestBody CreateUserRequest request) {
-        return ResponseEntity.ok(userService.createUser(request));
+    public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
+        return userService.createUser(request);
     }
 
-    @GetMapping
-    public ResponseEntity<List<User>> list() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
+
+//    @GetMapping
+//    public ResponseEntity<List<User>> list() {
+//        return ResponseEntity.ok(userService.getAllUsers());
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<FetchUserResponse> get(@PathVariable Long id) {
@@ -44,11 +52,16 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-//    @PostMapping("/{userId}/roles/{roleId}")
-//    public ResponseEntity<String> assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
-//        userService.assignRoleToUser(userId, roleId);
-//        return ResponseEntity.ok("Role assigned to user successfully.");
-//    }
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
+        String uploadDir = "/upload/images/";
+        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path path = Paths.get(uploadDir + filename);
+        Files.copy(file.getInputStream(), path);
+
+        String publicUrl = "http://localhost:8080/upload/images/" + filename;
+        return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
+    }
 
     @GetMapping("/search")
     public ResponseEntity<PageUserResponse> searchUsers(

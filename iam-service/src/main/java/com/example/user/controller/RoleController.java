@@ -52,24 +52,14 @@ public class RoleController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{roleId}/privileges/{privilegeId}")
-    public ResponseEntity<String> assignPrivilegeToRole(
-            @PathVariable Long roleId,
-            @PathVariable Long privilegeId) {
-
-        roleService.assignPrivilegeToRole(roleId, privilegeId);
-        return ResponseEntity.ok("Privilege assigned to role successfully.");
-    }
-
-    @DeleteMapping("/{roleId}/privileges/{privilegeId}")
-    public ResponseEntity<String> removePrivilege(
-            @PathVariable Long roleId,
-            @PathVariable Long privilegeId) {
-        roleService.removePrivilegeFromRole(roleId, privilegeId);
-        return ResponseEntity.ok("Privilege removed from role successfully.");
-    }
-
-
+//    @DeleteMapping("/{roleId}/privileges/{privilegeId}")
+//    public ResponseEntity<String> removePrivilege(
+//            @PathVariable Long roleId,
+//            @PathVariable Long privilegeId) {
+//        roleService.removePrivilegeFromRole(roleId, privilegeId);
+//        return ResponseEntity.ok("Privilege removed from role successfully.");
+//    }
+//
 
     @GetMapping("/paging")
     public ResponseEntity<PageRoleResponse> getAllPaged(

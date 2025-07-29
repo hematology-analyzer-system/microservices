@@ -1,5 +1,6 @@
 package com.example.user.service;
 import com.example.user.config.SchedulerConfig;
+import com.example.user.controller.AuthController;
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
@@ -11,12 +12,17 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,33 +34,122 @@ public class UserService {
     private final AuditorAware<UserAuditInfo> auditorAware;
     private final ModifiedHistoryRepository historyRepository;
     private static final Logger log = (Logger) LoggerFactory.getLogger(UserService.class);
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
+    @Autowired
+    private EmailService emailService;
 
-    public User createUser(CreateUserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+    String defaultMalePic = "/images/defaultMale.png";
+    String defaultFemalePic = "/images/defaultFemale.png";
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmailWithoutAuditing(email);
+    }
+
+    private boolean validatePrivileges(User currentUser, Long privilegeId) {
+        if (currentUser == null) return false;
+        if (!currentUser.getStatus().equals("ACTIVE")) return  false;
+        List<Long> roleIds = getAllRolesById(currentUser.getId());
+        Set<Long> privilegeIds = roleService.getAllPrivilegesIds(roleIds);
+        return  privilegeIds.contains(privilegeId);
+    }
+
+    public ResponseEntity<?> createUser(CreateUserRequest request) {
+        try {
+            User currentUser = getCurrentUser();
+            if (validatePrivileges(currentUser, 14L)) {
+                List<String> duplicateFields = new ArrayList<>();
+                if (userRepository.existsByEmail(request.getEmail())) {
+                    duplicateFields.add("email");
+                    log.info("Registration failed: Email {} already exists", request.getEmail());
+                }
+                if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
+                    duplicateFields.add("phone");
+                    log.info("Registration failed: Phone {} already exists", request.getPhone());
+                }
+                if (request.getIdentifyNum() != null && userRepository.existsByIdentifyNum(request.getIdentifyNum())) {
+                    duplicateFields.add("identify");
+                    log.info("Registration failed: Identify Number {} already exists", request.getIdentifyNum());
+                }
+                if (!duplicateFields.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Collections.singletonMap("error", duplicateFields));
+                }
+                User user = new User();
+                user.setFullName(request.getFullName());
+                user.setEmail(request.getEmail());
+                user.setPhone(request.getPhone());
+                user.setGender(request.getGender());
+                user.setDate_of_Birth(request.getDate_of_Birth());
+                user.setAddress(request.getAddress());
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                user.setStatus(User.status.PENDING_ACTIVATION.toString()); // Set status to PENDING_ACTIVATION
+                user.setIdentifyNum(request.getIdentifyNum());
+
+                String gender = request.getGender();
+                if ("female".equalsIgnoreCase(gender)) {
+                    user.setProfilePic(defaultFemalePic);
+                } else {
+                    user.setProfilePic(defaultMalePic);
+                }
+                user.setCreatedBy(new UserAuditInfo(
+                        null, // userId is not yet available here
+                        currentUser.getFullName(),
+                        currentUser.getEmail(),
+                        currentUser.getIdentifyNum()
+                ));
+                user.setUpdatedBy(new UserAuditInfo(
+                        null, // userId is not yet available here
+                        currentUser.getFullName(),
+                        currentUser.getEmail(),
+                        currentUser.getIdentifyNum()
+                ));
+                userRepository.save(user);
+                assignRoleToUser(user.getId(), request.getRoleIds());
+                userRepository.save(user);
+                log.info("User {} registered successfully with PENDING_ACTIVATION status.", user.getEmail());
+                sendMailActivation(user.getEmail());
+                return ResponseEntity.ok(Collections.singletonMap("message", "User is created successfully!"));
+            }
+        } catch (Exception e) {
+            log.error("User creation failed", e);
+            return  ResponseEntity.badRequest().body(Collections.singletonMap("error", e));
         }
-
-        User user = new User();
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        user.setIdentifyNum(request.getIdentify_num());
-        user.setAddress(request.getAddress());
-        user.setGender(request.getGender());
-        user.setPassword(request.getPassword());
-//        user.setAge(request.getAge());
-        user.setDate_of_Birth(request.getDate_of_Birth());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdate_at(LocalDateTime.now());
-        UserAuditInfo audit = auditorAware.getCurrentAuditor().orElse(null);
-        user.setCreatedBy(audit);
-        user.setUpdatedBy(audit);
-        return userRepository.save(user);
+        return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Invalid request"));
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    private void sendMailActivation(String email) {
+        String subject = "Activate Your Account";
+        String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
+
+        String emailBody = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "  <style>" +
+                "    .button {" +
+                "      background-color: #4CAF50;" +
+                "      color: white;" +
+                "      padding: 12px 20px;" +
+                "      text-align: center;" +
+                "      text-decoration: none;" +
+                "      display: inline-block;" +
+                "      font-size: 16px;" +
+                "      border-radius: 5px;" +
+                "    }" +
+                "  </style>" +
+                "</head>" +
+                "<body>" +
+                "  <p>Hello,</p>" +
+                "  <p>Thank you for registering. Please click the button below to activate your account:</p>" +
+                "  <a href=\"" + frontendLink + "\" class=\"button\">Activate Account</a>" +
+                "  <p>If the button doesn't work, you can copy and paste this link into your browser:</p>" +
+                "  <p>" + frontendLink + "</p>" +
+                "</body>" +
+                "</html>";
+
+        emailService.sendEmail(email, subject, emailBody);
     }
+
 
     public Optional<FetchUserResponse> getUserById(Long id) {
         User newUser = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
@@ -88,14 +183,14 @@ public class UserService {
     }
 
     public Optional<FetchUserResponse> FetchUserDetails(Long userId, UpdateUserRequest dto) {
-//        userId = 67L;
         Long finalUserId = userId;
         User user =  userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", finalUserId));
 
-        if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("INACTIVE") || user.getStatus().equals("PENDING_ACTIVATION")) {
+        if (user.getStatus().equals("PENDING_VERIFICATION") || user.getStatus().equals("PENDING_ACTIVATION")) {
              throw new IllegalArgumentException("Invalid user status");
          }
+
          user.setFullName(dto.getFullName());
          user.setEmail(dto.getEmail());
          user.setGender(dto.getGender());
@@ -125,36 +220,6 @@ public class UserService {
          }
         return Optional.empty();
     }
-
-    public List<User> searchUsersByName(String namePart) {
-        return userRepository.findByFullNameContainingIgnoreCase(namePart);
-    }
-
-//    public User updateUser(Long id, UpdateUserRequest dto) {
-//        User user = userRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        if (!user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
-//            throw new IllegalArgumentException("Email already exists");
-//        }
-//        user.setFullName(dto.getFullName());
-//        user.setDate_of_Birth(dto.getDate_of_Birth());
-//        user.setEmail(dto.getEmail());
-//        user.setAddress(dto.getAddress());
-//        user.setGender(dto.getGender());
-////        user.setAge(dto.getAge());
-//        UserAuditInfo currentUser = auditorAware.getCurrentAuditor().orElse(null);
-//        user.setUpdatedBy(currentUser);
-//        user.setUpdate_at(LocalDateTime.now());
-//        if (currentUser != null) {
-//            ModifiedHistory history = new ModifiedHistory();
-//            history.setUpdatedAt(LocalDateTime.now());
-//            history.setUpdatedBy(currentUser);
-//
-//            historyRepository.save(history);
-//        }
-//
-//        return userRepository.save(user);
-//    }
 
     public PageUserResponse searchUsers(int page, int size, String keyword, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("desc") ?
@@ -233,7 +298,8 @@ public class UserService {
             spec = spec.and((root, query, cb) -> cb.or(
                     cb.like(cb.lower(root.get("fullName")), "%" + searchText.toLowerCase() + "%"),
                     cb.like(cb.lower(root.get("email")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("phone")), "%" + searchText.toLowerCase() + "%")
+                    cb.like(cb.lower(root.get("phone")), "%" + searchText.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("status")), "%" + searchText.toLowerCase() + "%")
             ));
         }
 

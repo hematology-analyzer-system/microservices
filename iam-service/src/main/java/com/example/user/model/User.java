@@ -45,6 +45,8 @@ public class User implements UserDetails {
     private String identifyNum;
     private LocalDateTime update_at;
     private LocalDateTime createdAt;
+    @Column(name = "profileImageUrl")
+    private String profilePic;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "email", column = @Column(name = "created_by_email")),
@@ -72,7 +74,8 @@ public class User implements UserDetails {
         ACTIVE,
         PENDING_VERIFICATION,
         INACTIVE,
-        PENDING_ACTIVATION // for admin create for user
+        PENDING_ACTIVATION, // for admin create for user
+        CHANGING // for logout when user is changed information
     }
 
     @PreUpdate
