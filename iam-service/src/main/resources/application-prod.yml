@@ -1,4 +1,8 @@
 spring:
+  config:
+    activate:
+      on-profile: production
+
   application:
     name: iam-service
 
@@ -17,19 +21,19 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
-    mail:
-      host: smtp.gmail.com
-      port: 587
-      username: ${SPRING_MAIL_USERNAME}
-      password: ${SPRING_MAIL_PASSWORD}
-      protocol: smtp
-      properties:
-        mail:
-          smtp:
-            auth: true
-            starttls:
-              enable: true
-      default-encoding: UTF-8
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    default-encoding: UTF-8
 
 server:
   port: 8080
@@ -44,6 +48,9 @@ management:
   endpoint:
     health:
       show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
+  health:
+    mail:
+      enabled: false
   server:
     port: 8080
 
