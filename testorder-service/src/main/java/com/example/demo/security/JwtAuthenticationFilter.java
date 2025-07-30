@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String username = claims.getSubject(); // sub
             Long userId = claims.get("userid", Long.class);
-            String fullname = claims.get("fullname", String.class);
+            String fullname = claims.get("fullName", String.class);
             String email = String.valueOf(claims.get("email", String.class));
             String identifyNum = claims.get("identifyNum", String.class);
 

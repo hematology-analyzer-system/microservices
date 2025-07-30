@@ -84,6 +84,7 @@ services:
       SERVER_SERVLET_CONTEXT_PATH: /patient
     ports:
       - "127.0.0.1:8081:8081"
+      - "9090:9090"
     networks:
       - app-network
     restart: unless-stopped

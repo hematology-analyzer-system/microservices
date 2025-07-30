@@ -13,9 +13,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/patient-db
+    url: jdbc:postgresql://localhost:5433/patient
     username: postgres
     password: bavui4444
+
+  grpc:
+    server:
+      port: 9090
 
 management:
   endpoints:
@@ -32,3 +36,8 @@ server:
     context-path: /patient
 jwt:
   secret: "my-super-ultra-promax-vip-pro-password-32-bytes-long"
+
+logging:
+  level:
+    org.springframework.grpc: DEBUG
+

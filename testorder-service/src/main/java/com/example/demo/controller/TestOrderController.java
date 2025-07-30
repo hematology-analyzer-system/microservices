@@ -5,7 +5,6 @@ import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
 import com.example.demo.dto.search.SearchDTO;
-import com.example.demo.entity.TestOrder;
 import com.example.demo.service.TestOrderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,16 @@ public class TestOrderController {
 
     @Autowired
     private TestOrderService testOrderService;
+
+    @GetMapping("/grpc/{id}")
+    public ResponseEntity<TOResponse> grpcTesting(
+            @PathVariable Integer id
+    ){
+        TOResponse toResponse = testOrderService.testGrpc(id);
+
+        return ResponseEntity.ok(toResponse);
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<TOResponse> createWithoutId(
