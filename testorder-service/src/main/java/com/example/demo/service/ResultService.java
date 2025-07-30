@@ -141,6 +141,8 @@ public class ResultService {
                     return d;
                 }).toList();
 
+        channel.shutdown();
+
         return ResultResponse.builder()
                 .reviewed(result.getReviewed())
                 .resultList(detailResultResponses)
