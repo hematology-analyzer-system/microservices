@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -172,39 +171,4 @@ public class PatientServiceImpl implements PatientService {
                     .build()
         );
     }
-
-    public Page<PatientRecordResponse> getFilteredPatients(
-            String searchText,
-            String sortBy,
-            String direction,
-            int offsetPage,
-            int limitOnePage
-    ) {
-        Pageable pageable = PageRequest.of(offsetPage - 1, limitOnePage,
-                Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
-
-        Specification<Patient> spec = (root, query, cb) -> cb.conjunction();
-
-        if (searchText != null && !searchText.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("fullName")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("email")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("phone")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("address")), "%" + searchText.toLowerCase() + "%")
-            ));
-        }
-
-        Page<Patient> patients = patientRepository.findAll(spec, pageable);
-
-        return patients.map(patient -> PatientRecordResponse.builder()
-                .id(patient.getId())
-                .fullName(patient.getFullName())
-                .address(patient.getAddress())
-                .gender(patient.getGender())
-                .dateOfBirth(patient.getDateOfBirth())
-                .phone(patient.getPhone())
-                .email(patient.getEmail())
-                .createdAt(patient.getCreatedAt())
-                .updatedAt(patient.getUpdatedAt())
-                .build());
 }
