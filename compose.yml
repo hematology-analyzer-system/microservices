@@ -1,5 +1,5 @@
 services:
-  # Shared Database
+  # Shared Postgres Database
   postgres:
     image: postgres:17-alpine
     container_name: shared-postgres
@@ -17,6 +17,27 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d microservices"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: bavui4444
+      MONGO_INITDB_DATABASE: microservices
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -111,10 +132,9 @@ services:
       timeout: 5s
       retries: 5
     
-
 volumes:
   postgres_data:
-
+  mongodb_data:
 networks:
   app-network:
     driver: bridge
