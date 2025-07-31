@@ -48,9 +48,18 @@ management:
   endpoint:
     health:
       show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
+<<<<<<< HEAD
+<<<<<<< HEAD
   health:
     mail:
       enabled: false
+=======
+>>>>>>> 1a44319 (chore(config): enable prod configs for iam-service and patient-service)
+=======
+  health:
+    mail:
+      enabled: false
+>>>>>>> ac3914a (chore(ci): cleanup GitLab pipelines and disable mail health check)
   server:
     port: 8080
 

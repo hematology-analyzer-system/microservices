@@ -7,6 +7,8 @@ import com.example.user.service.RoleService;
 import com.example.user.dto.role.UpdateRoleRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,14 +17,20 @@ import java.util.Optional;
 @RequestMapping("/roles")
 public class RoleController {
     private final RoleService roleService;
+    private final RabbitTemplate rabbitTemplate;
 
-    public RoleController(RoleService roleService) {
+    public RoleController(RoleService roleService, RabbitTemplate rabbitTemplate) {
         this.roleService = roleService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @PostMapping
     public ResponseEntity<UpdateRoleRequest> create(@RequestBody UpdateRoleRequest role) {
-        if (roleService.createRole(role).isPresent()) return ResponseEntity.ok(role);
+        if (roleService.createRole(role).isPresent()) {
+            // Return the created role
+            rabbitTemplate.convertAndSend("appExchange", "role.create", "Role created: " + role.getName());
+            return ResponseEntity.ok(role);
+        }
         else return ResponseEntity.badRequest().build();
     }
 
@@ -30,25 +38,34 @@ public class RoleController {
     public ResponseEntity<UpdateRoleRequest> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest dto) {
         dto.setRoleId(id);
         Optional<UpdateRoleRequest> updated = roleService.updateRole(dto);
-        if (updated.isPresent()) return ResponseEntity.ok(dto);
+        if (updated.isPresent()) {
+            rabbitTemplate.convertAndSend("appExchange", "role.update", "Role updated: " + dto.getName());
+            return ResponseEntity.ok(dto);
+        }
         else return ResponseEntity.badRequest().build();
     }
 
     @GetMapping
     public ResponseEntity<List<Role>> list() {
-        return ResponseEntity.ok(roleService.getAllRoles());
+        List<Role> roles = roleService.getAllRoles();
+        // Send RabbitMQ message after listing roles
+        rabbitTemplate.convertAndSend("appExchange", "role.list", "Roles listed: count=" + roles.size());
+        return ResponseEntity.ok(roles);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Role> get(@PathVariable Long id) {
-        return roleService.getRoleById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        var result = roleService.getRoleById(id);
+        // Send RabbitMQ message after getting role
+        rabbitTemplate.convertAndSend("appExchange", "role.get", "Role get: id=" + id + ", found=" + result.isPresent());
+        return result.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         roleService.deleteRole(id);
+        // Send RabbitMQ message after deleting role
+        rabbitTemplate.convertAndSend("appExchange", "role.delete", "Role deleted: id=" + id);
         return ResponseEntity.noContent().build();
     }
 
@@ -59,7 +76,6 @@ public class RoleController {
 //        roleService.removePrivilegeFromRole(roleId, privilegeId);
 //        return ResponseEntity.ok("Privilege removed from role successfully.");
 //    }
-//
 
     @GetMapping("/paging")
     public ResponseEntity<PageRoleResponse> getAllPaged(

@@ -8,12 +8,16 @@ import lombok.Data;
 public class Privilege {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long privilegeId;
+
+    
 
     private String code;
     private String description;
 
 //    @ManyToMany(mappedBy = "privileges")
 //    private Set<Role> roles = new HashSet<>();
+    public Long getPrivilegeId() {
+        return privilegeId;
+    }
 }

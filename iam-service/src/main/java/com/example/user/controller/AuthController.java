@@ -43,6 +43,8 @@ import java.util.*;
 @Slf4j
 @EnableTransactionManagement
 public class AuthController {
+    @Autowired
+    private org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
@@ -159,6 +161,10 @@ public class AuthController {
             body.put("token", token);
             body.put("expiresIn", 86400); // Optional
 
+            // Send RabbitMQ message after successful login
+            String loginMsg = "User logged in: " + user.getEmail();
+            rabbitTemplate.convertAndSend("appExchange", "login.key", loginMsg);
+
             return ResponseEntity.ok(body);
 
         } catch (BadCredentialsException e) {
@@ -257,6 +263,9 @@ public class AuthController {
         sendVerificationOtp(user, "registration"); // Indicate purpose of OTP
 
         log.info("User {} registered successfully with PENDING_VERIFICATION status.", user.getEmail());
+        // Send RabbitMQ message after registration
+        String registrationMsg = "New user registered: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "register.key", registrationMsg);
         return ResponseEntity.ok(Collections.singletonMap("message", "User registered successfully! Please check your email to verify your account."));
     }
 
@@ -279,6 +288,9 @@ public class AuthController {
 
         sendVerificationOtp(user, "registration"); // Resend OTP for registration
         log.info("Resent registration OTP to {}", user.getEmail());
+        // Send RabbitMQ message after successful resend-otp
+        String resendOtpMsg = "Resent registration OTP to: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "resendotp.key", resendOtpMsg);
         return ResponseEntity.ok(Collections.singletonMap("message", "New OTP sent successfully."));
     }
 
@@ -323,6 +335,9 @@ public class AuthController {
         verificationTokenRepository.delete(token);
 
         log.info("User {} email verified successfully and status set to ACTIVE.", user.getEmail());
+        // Send RabbitMQ message after successful email verification
+        String verifyOtpMsg = "User email verified: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "verifyotp.key", verifyOtpMsg);
         return ResponseEntity.ok(Collections.singletonMap("message", "Email verified successfully!"));
     }
 
@@ -349,6 +364,9 @@ public class AuthController {
         // Generate and send OTP for password reset purpose
         sendVerificationOtp(user, "password_reset");
         log.info("Password reset OTP sent to {}.", user.getEmail());
+        String forgotPasswordMsg = "Password reset OTP sent to: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "forgotpassword.key", forgotPasswordMsg);
+
         return ResponseEntity.ok(Collections.singletonMap("message", "Password reset OTP sent to your email."));
     }
 
@@ -392,6 +410,10 @@ public class AuthController {
         // The user's status remains ACTIVE. Frontend will proceed to reset password.
         verificationTokenRepository.delete(token);
         log.info("Password reset OTP verified for user {}.", user.getEmail());
+
+        String verifyResetOtpMsg = "Password reset OTP verified for user: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "verifyresetotp.key", verifyResetOtpMsg);
+
         return ResponseEntity.ok(Collections.singletonMap("message", "OTP verified. You can now reset your password."));
     }
 
@@ -416,6 +438,10 @@ public class AuthController {
         userRepository.save(user);
 
         log.info("Password successfully reset for user {}.", user.getEmail());
+
+        String resetPasswordMsg = "Password successfully reset for user: " + user.getEmail();
+        rabbitTemplate.convertAndSend("appExchange", "resetpassword.key", resetPasswordMsg);
+        
         return ResponseEntity.ok(Collections.singletonMap("message", "Password reset successfully."));
     }
 
@@ -559,6 +585,9 @@ public class AuthController {
                 .path("/")
                 .maxAge(0)
                 .build();
+
+        // Send RabbitMQ message after logout
+        rabbitTemplate.convertAndSend("appExchange", "logout.key", "User logged out successfully.");
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
