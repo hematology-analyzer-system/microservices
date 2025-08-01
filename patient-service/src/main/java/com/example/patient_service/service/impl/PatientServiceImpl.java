@@ -21,7 +21,8 @@ import org.springframework.stereotype.Service;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
-    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+
+    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum) {
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
@@ -52,7 +53,6 @@ public class PatientServiceImpl implements PatientService {
                         currentUser.getIdentifyNum()
                 ))
                 .build();
-
 
 
         patientRepository.save(newPatient);
@@ -160,16 +160,16 @@ public class PatientServiceImpl implements PatientService {
         Page<Patient> patientPage = patientRepository.findAll(pageable);
 
         return patientPage.map(patient -> PatientRecordResponse.builder()
-                    .id(patient.getId())
-                    .fullName(patient.getFullName())
-                    .address(patient.getAddress())
-                    .email(patient.getEmail())
-                    .phone(patient.getPhone())
-                    .dateOfBirth(patient.getDateOfBirth())
-                    .gender(patient.getGender())
-                    .createdAt(patient.getCreatedAt())
-                    .updatedAt(patient.getUpdatedAt())
-                    .build()
+                .id(patient.getId())
+                .fullName(patient.getFullName())
+                .address(patient.getAddress())
+                .email(patient.getEmail())
+                .phone(patient.getPhone())
+                .dateOfBirth(patient.getDateOfBirth())
+                .gender(patient.getGender())
+                .createdAt(patient.getCreatedAt())
+                .updatedAt(patient.getUpdatedAt())
+                .build()
         );
     }
 
@@ -207,4 +207,5 @@ public class PatientServiceImpl implements PatientService {
                 .createdAt(patient.getCreatedAt())
                 .updatedAt(patient.getUpdatedAt())
                 .build());
+    }
 }
