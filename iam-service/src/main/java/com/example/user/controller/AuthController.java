@@ -66,6 +66,7 @@ public class AuthController {
 
     @PostMapping("/me")
     public ResponseEntity<?> me(@RequestBody AuthRequest request) {
+        // Authenticate the user
         Authentication authentication = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
@@ -73,26 +74,23 @@ public class AuthController {
         Optional<User> userOptional = userRepository.findByEmail(request.getUsername());
 
         if (userOptional.isEmpty()) {
+            // This case should ideally not be reached if authentication succeeded,
+            // but it's good for defensive programming.
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
 
         User user = userOptional.get();
-        // Build claims
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("email", user.getEmail());
-        claims.put("status", user.getStatus());
 
-        Set<Map<String, Object>> userRoles = new HashSet<>();
+        // Prepare the response data
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("email", user.getEmail());
+        responseData.put("fullName", user.getFullName()); // Added fullName
+
         Set<Long> privilegeIds = new HashSet<>();
 
+        // Collect all unique privilege IDs from all roles of the user
         if (user.getRoles() != null) {
             for (Role role : user.getRoles()) {
-                Map<String, Object> roleInfo = new HashMap<>();
-                roleInfo.put("id", role.getRoleId());
-                roleInfo.put("name", role.getName());
-                roleInfo.put("code", role.getCode());
-                userRoles.add(roleInfo);
-
                 if (role.getPrivileges() != null) {
                     for (Privilege privilege : role.getPrivileges()) {
                         privilegeIds.add(privilege.getPrivilegeId());
@@ -101,10 +99,9 @@ public class AuthController {
             }
         }
 
-        claims.put("roles", userRoles);
-        claims.put("privilege_ids", privilegeIds);
+        responseData.put("privilege_ids", privilegeIds); // Added privilege_ids
 
-        return ResponseEntity.ok(claims);
+        return ResponseEntity.ok(responseData);
     }
 
     @PostMapping("/login")
