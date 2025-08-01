@@ -7,16 +7,25 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update         # update | validate | create | create-drop
-    show-sql: true             # Hi?n th? c�u SQL trong console
+      ddl-auto: update # update | validate | create | create-drop
+    show-sql: true # Hi?n th? c�u SQL trong console
     properties:
       hibernate:
-        format_sql: true       # Format SQL cho d? ??c
+        format_sql: true # Format SQL cho d? ??c
 
 server:
-  port: 8082    # C� th? ??i port n?u c?n
+  port: 8082 # C� th? ??i port n?u c?n
   servlet:
     context-path: /testorder
 
 jwt:
   secret: "my-super-ultra-promax-vip-pro-password-32-bytes-long"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

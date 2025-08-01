@@ -32,3 +32,9 @@ server:
     context-path: /patient
 jwt:
   secret: "my-super-ultra-promax-vip-pro-password-32-bytes-long"
+
+  rabbitmq:
+    host: host.docker.internal
+    port: 5672
+    username: guest
+    password: guest
