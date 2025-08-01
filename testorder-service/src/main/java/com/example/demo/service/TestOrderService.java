@@ -15,8 +15,9 @@ import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.PatientRepository;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
+import com.example.grpc.patient.*;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import lombok.AllArgsConstructor;
 import org.aspectj.weaver.ast.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -44,12 +49,50 @@ public class TestOrderService {
     @Autowired
     private TestOrderRepository testOrderRepository;
 
-    @Autowired
-    private PatientRepository  patientRepository;
 
-    private TOResponse toResponse(TestOrder testOrder) {
-        Patient patient = testOrder.getPatient();
+    public TOResponse testGrpc(Integer id){
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
+                .build();
 
+        try {
+            PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+
+            PatientResponse response = stub.getPatientById(
+                    PatientRequest.newBuilder().setId(id).build());
+
+            return TOResponse.builder()
+                    .fullName(response.getFullName())
+                    .dateOfBirth(LocalDate.parse(response.getDateOfBirth()))
+                    .address(response.getAddress())
+                    .gender(response.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE)
+                    .phone(response.getPhone())
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException("gRPC call failed: " + e.getMessage(), e);
+        } finally {
+            channel.shutdownNow();
+        }
+    }
+
+    public static LocalDate safeParseDate(String date) {
+        List<DateTimeFormatter> formatters = List.of(
+                DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        );
+
+        for (DateTimeFormatter fmt : formatters) {
+            try {
+                return LocalDate.parse(date, fmt);
+            } catch (DateTimeParseException ignored) {}
+        }
+
+        throw new IllegalArgumentException("Date of Birth is invalid: " + date);
+    }
+
+    private TOResponse toResponse(TestOrder testOrder, PatientResponse patientResponse) {
         List<CommentTO> comment = testOrder.getCommentTO();
         List<Result> temp = testOrder.getResults();
 
@@ -75,7 +118,6 @@ public class TestOrderService {
                         List<MinimalCommentResponse> commentResult = result.getComment().stream()
                                 .map( detail -> {
                                     MinimalCommentResponse d = new MinimalCommentResponse();
-                                    d.setId(detail.getCommentId());
                                     d.setUpdateBy(detail.getUpdateBy());
                                     d.setContent(detail.getContent());
                                     d.setCreatedBy(detail.getCreateBy());
@@ -101,7 +143,6 @@ public class TestOrderService {
             commentResponses = comment.stream()
                     .map(t -> {
                         MinimalCommentResponse res = new MinimalCommentResponse();
-                        res.setId(t.getCommentId());
                         res.setContent(t.getContent());
                         res.setCreatedBy(t.getCreateBy());
                         res.setUpdateBy(t.getUpdateBy());
@@ -115,7 +156,6 @@ public class TestOrderService {
                 .getAuthentication().getDetails();
 
         return TOResponse.builder()
-                .testId(testOrder.getTestId())
                 .status(testOrder.getStatus())
                 .updateBy(formalizeCreatedBy(
                         currentUser.getUserId(),
@@ -130,11 +170,11 @@ public class TestOrderService {
 
                 .comments(commentResponses)
 
-                .fullName(patient.getFullName())
-                .address(patient.getAddress())
-                .gender(patient.getGender())
-                .dateOfBirth(patient.getDateOfBirth())
-                .phone(patient.getPhone())
+                .fullName(patientResponse.getFullName())
+                .address(patientResponse.getAddress())
+                .gender(patientResponse.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE)
+                .dateOfBirth(safeParseDate(patientResponse.getDateOfBirth()))
+                .phone(patientResponse.getPhone())
                 .build();
     }
 
@@ -152,61 +192,77 @@ public class TestOrderService {
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
-        Patient patient = id.map(pid -> patientRepository.findById(pid)
-                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Patient not found")))
-                .orElseGet(() -> {
-                    Patient newPatient = Patient.builder()
-                            .fullName(addTORequest.getFullName())
-                            .dateOfBirth(addTORequest.getDateOfBirth())
-                            .gender(addTORequest.getGender())
-                            .address(addTORequest.getAddress())
-                            .phone(addTORequest.getPhoneNumber())
-                            .email(addTORequest.getEmail())
-                            .build();
-                    return patientRepository.save(newPatient);
-                });
-
-        TestOrder testOrder = TestOrder.builder()
-                .createdBy(createdByinString)
-                .status("PENDING")
-                .patient(patient)
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
                 .build();
 
-        patient.getTestOrders().add(testOrder);
+        try {
+            PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
-        patientRepository.save(patient);
+            PatientResponse response = id.map(pid -> stub.getPatientById(PatientRequest.newBuilder().setId(pid).build()))
+                    .orElseGet(() -> {
+                        CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
+                                .setFullName(addTORequest.getFullName())
+                                .setEmail(addTORequest.getEmail())
+                                .setAddress(addTORequest.getAddress())
+                                .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
+                                .setPhone(addTORequest.getPhoneNumber())
+                                .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
+                                .setCreatedBy(createdByinString)
+                                .build();
 
-        return toResponse(testOrder);
+                        return stub.createPatient(createPatientRequest);
+                    });
+
+            TestOrder testOrder = TestOrder.builder()
+                    .createdBy(createdByinString)
+                    .status("PENDING")
+                    .patientTOId(response.getId())
+                    .build();
+
+            testOrderRepository.save(testOrder);
+
+            return toResponse(testOrder, response);
+        } catch (Exception e) {
+            throw new RuntimeException("gRPC call failed aduni: " + e.getMessage(), e);
+        } finally {
+            channel.shutdownNow();
+        }
     }
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO){
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
+                .build();
+
         TestOrder testOrder = testOrderRepository.findById(TO_id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
-        Patient patient = testOrder.getPatient();
-        if(patient == null){
-            throw new ApiException(HttpStatus.NOT_FOUND, "Patient not found!");
+
+
+        try {
+            PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+
+            UpdatePatientRequestGRPC request = UpdatePatientRequestGRPC.newBuilder()
+                    .setId(testOrder.getPatientTOId())
+                    .setFullName(updateTO.getFullName())
+                    .setAddress(updateTO.getAddress())
+                    .setGender(updateTO.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
+                    .setPhone(updateTO.getPhone())
+                    .setDateOfBirth(updateTO.getDateOfBirth().toString())
+                    .build();
+
+            PatientResponse modifyResponse = stub.updatePatient(request);
+
+
+            return toResponse(testOrder, modifyResponse);
+        } catch (Exception e) {
+            throw new RuntimeException("gRPC call failed: " + e.getMessage(), e);
+        } finally {
+            channel.shutdownNow();
         }
-
-        patient.setFullName(updateTO.getFullName());
-        patient.setAddress(updateTO.getAddress());
-        patient.setGender(updateTO.getGender());
-        patient.setPhone(updateTO.getPhone());
-        patient.setDateOfBirth(updateTO.getDateOfBirth());
-
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
-
-        testOrder.setUpdateBy(formalizeCreatedBy(
-                currentUser.getUserId(),
-                currentUser.getFullname(),
-                currentUser.getEmail(),
-                currentUser.getIdentifyNum()
-        ));
-
-        testOrderRepository.save(testOrder);
-
-        return toResponse(testOrder);
     }
 
     public void deteleTestOrder(Long TO_id){
@@ -225,17 +281,50 @@ public class TestOrderService {
                 Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<TestOrder>  testOrderPage;
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
+                .build();
 
-        if(keyword == null || keyword.isBlank()){
+        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+
+        Page<TestOrder> testOrderPage;
+        List<TOResponse> testorderResponses;
+
+        if (keyword == null || keyword.isBlank()) {
             testOrderPage = testOrderRepository.findAll(pageable);
-        }else{
-            testOrderPage = testOrderRepository.findByPatient_FullNameContainingIgnoreCase(keyword, pageable);
+        } else {
+
+            SearchPatientResponseGRPC patientResponseGRPC = stub.searchPatient(
+                    SearchPatientRequestGRPC.newBuilder().setKeyword(keyword).build()
+            );
+
+            List<Integer> patientIds = patientResponseGRPC.getPatientsList().stream()
+                    .map(PatientResponse::getId)
+                    .toList();
+
+            if (patientIds.isEmpty()) {
+                testOrderPage = Page.empty(pageable);
+            } else {
+                testOrderPage = testOrderRepository.findByPatientTOIdIn(patientIds, pageable);
+            }
         }
 
-        List<TOResponse> testorderResponses = testOrderPage.getContent().stream()
-                .map(this::toResponse)
-                .toList();
+            // Gọi gRPC cho từng testOrder
+            testorderResponses = testOrderPage.getContent().stream()
+                    .map(testOrder -> {
+                        try {
+                            PatientResponse patient = stub.getPatientById(
+                                    PatientRequest.newBuilder().setId(testOrder.getPatientTOId()).build()
+                            );
+                            return toResponse(testOrder, patient);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to get patient via gRPC for TestOrder id = " + testOrder.getTestId(), e);
+                        }
+                    })
+                    .toList();
+
+        channel.shutdown();
 
         if(testorderResponses.isEmpty()){
             return PageTOResponse.empty(page, size, sortBy, direction);
@@ -265,18 +354,43 @@ public class TestOrderService {
         Specification<TestOrder> spec = ((root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
 
 
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
+                .build();
+
+        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+
+        List<Integer> tempPatientIds = new ArrayList<>();
+        SearchPatientResponseGRPC cachedResponse = null;
+
         // Search
         if (searchText != null && !searchText.isEmpty()) {
-            String search = "%" + searchText.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> {
-                Join<TestOrder, Patient> patientJoin = root.join("patient", JoinType.LEFT);
+            // TIM CAC PATIENT THOA DIEU KIEN SEARCH
+            SearchPatientResponseGRPC patientResponseGRPC = stub.searchPatient(
+                    SearchPatientRequestGRPC.newBuilder().setKeyword(searchText).build()
+            );
 
-                return
-                        cb.like(cb.lower(patientJoin.get("fullName")), search);
+            cachedResponse = patientResponseGRPC;
+
+            // LAY ID CUA PATIENT THOA DIEU KIEN
+            List<Integer> patientIds = patientResponseGRPC.getPatientsList().stream()
+                    .map(PatientResponse::getId)
+                    .toList();
+
+            tempPatientIds.addAll(patientIds);
+
+            spec = spec.and((root, query, cb) -> {
+                if (!patientIds.isEmpty()) {
+                    return root.get("patientTOId").in(patientIds);
+                } else {
+                    return cb.disjunction();
+                }
             });
         }
 
-        //Filter
+
+        // FILTER
         if (filter != null && !filter.isEmpty()) {
             if(filter.containsKey("fromDate")){
                 LocalDateTime fromDate;
@@ -321,20 +435,50 @@ public class TestOrderService {
             }
         }
 
+        Page<TestOrder> testOrders = testOrderRepository.findAll(spec, pageable);
 
-        Page<TestOrder>  testOrders = testOrderRepository.findAll(spec, pageable);
+        if (testOrders.isEmpty()) return Page.empty(pageable);
+
+        Map<Integer, PatientResponse> patientMap;
+
+        if (!tempPatientIds.isEmpty()) {
+            patientMap = cachedResponse.getPatientsList().stream()
+                    .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
+        } else {
+            Set<Integer> allPatientIds = testOrders.stream()
+                    .map(TestOrder::getPatientTOId)
+                    .collect(Collectors.toSet());
+
+            if (allPatientIds.isEmpty()) {
+                patientMap = Map.of(); // empty map
+            } else {
+                PatientListResponse patientListResponse = stub.getPatientsByIds(
+                        PatientIdsRequest.newBuilder().addAllIds(allPatientIds).build()
+                );
+
+                patientMap = patientListResponse.getPatientsList().stream()
+                        .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
+            }
+        }
+
+
+        channel.shutdown();
+
 
         return testOrders.map(tOrder -> {
             SearchDTO searchDTO = new SearchDTO();
-
             searchDTO.setId(tOrder.getTestId());
 
-            searchDTO.setFullName(tOrder.getPatient().getFullName());
-            searchDTO.setAge(
-                    Period.between(tOrder.getPatient().getDateOfBirth(), LocalDate.now()).getYears()
-            );
-            searchDTO.setGender(tOrder.getPatient().getGender());
-            searchDTO.setPhone(tOrder.getPatient().getPhone());
+            PatientResponse patient = patientMap.get(tOrder.getPatientTOId());
+
+            if (patient != null) {
+                searchDTO.setFullName(patient.getFullName());
+                searchDTO.setAge(Period.between(LocalDate.parse(patient.getDateOfBirth()), LocalDate.now()).getYears());
+                searchDTO.setGender(patient.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE);
+                searchDTO.setPhone(patient.getPhone());
+            } else {
+                searchDTO.setFullName("Unknown");
+            }
 
             searchDTO.setStatus(tOrder.getStatus());
             searchDTO.setCreatedBy(tOrder.getCreatedBy());
@@ -349,15 +493,27 @@ public class TestOrderService {
         TestOrder testOrder = testOrderRepository.findById(id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
-//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-//            throw new BadRequestException("Test Order Status is Not Completed");
-//        }
-//
-//        if(testOrder.getResults().isEmpty()){
-//            throw new BadRequestException("Test Order Results is empty!");
-//        }
+        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+            throw new BadRequestException("Test Order Status is Not Completed");
+        }
 
-        return toResponse(testOrder);
+        if(testOrder.getResults().isEmpty()){
+            throw new BadRequestException("Test Order Results is empty!");
+        }
+
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("host.docker.internal", 9090)
+                .usePlaintext()
+                .build();
+
+        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+
+        PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
+                .setId(testOrder.getPatientTOId()).build());
+
+        channel.shutdown();
+
+        return toResponse(testOrder, patient);
     }
 
 }

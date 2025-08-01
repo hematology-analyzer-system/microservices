@@ -44,10 +44,8 @@ public class TestOrder {
     @OneToMany(mappedBy = "testOrder", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Result> results = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
-
     @OneToMany(mappedBy = "testOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentTO> commentTO = new ArrayList<>();
+
+    private Integer patientTOId;
 }
