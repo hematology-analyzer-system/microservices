@@ -65,6 +65,18 @@ message SearchPatientResponseGRPC{
   repeated PatientResponse patients = 1;
 }
 
+/////////////////////////////////////////////////////////////////////////
+
+///////////////////////////// FILTER PATIENT ////////////////////////////
+
+message PatientIdsRequest {
+  repeated int32 ids = 1;
+}
+
+message PatientListResponse {
+  repeated PatientResponse patients = 1;
+}
+
 ///////////////////////////////  SERVICE ///////////////////////////////
 service PatientService{
   rpc GetPatientById (PatientRequest) returns (PatientResponse);
@@ -72,4 +84,5 @@ service PatientService{
   rpc UpdatePatient(UpdatePatientRequestGRPC) returns (PatientResponse);
 
   rpc SearchPatient(SearchPatientRequestGRPC) returns (SearchPatientResponseGRPC);
+  rpc GetPatientsByIds (PatientIdsRequest) returns (PatientListResponse);
 }

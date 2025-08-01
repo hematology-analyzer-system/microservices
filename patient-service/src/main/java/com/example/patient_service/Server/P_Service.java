@@ -140,4 +140,28 @@ public class P_Service extends PatientServiceGrpc.PatientServiceImplBase {
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
+
+    @Override
+    public void getPatientsByIds(PatientIdsRequest request, StreamObserver<PatientListResponse> responseObserver) {
+        List<Integer> ids = request.getIdsList();
+        List<Patient> patients = patientRepository.findAllById(ids);
+
+        List<PatientResponse> patientResponses = patients.stream()
+                .map(patient -> PatientResponse.newBuilder()
+                        .setFullName(patient.getFullName())
+                        .setPhone(patient.getPhone())
+                        .setGender(patient.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
+                        .setAddress(patient.getAddress())
+                        .setDateOfBirth(patient.getDateOfBirth().toString())
+                        .setId(patient.getId())
+                        .build())
+                .toList();
+
+        PatientListResponse response = PatientListResponse.newBuilder()
+                .addAllPatients(patientResponses)
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 }

@@ -18,7 +18,6 @@ import com.example.demo.security.CurrentUser;
 import com.example.grpc.patient.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -319,7 +318,7 @@ public class TestOrderService {
                             );
                             return toResponse(testOrder, patient);
                         } catch (Exception e) {
-                            throw new RuntimeException("Failed to get patient via gRPC for TestOrder id=" + testOrder.getTestId(), e);
+                            throw new RuntimeException("Failed to get patient via gRPC for TestOrder id = " + testOrder.getTestId(), e);
                         }
                     })
                     .toList();
@@ -362,15 +361,16 @@ public class TestOrderService {
         PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
         List<Integer> tempPatientIds = new ArrayList<>();
+        SearchPatientResponseGRPC cachedResponse = null;
 
         // Search
         if (searchText != null && !searchText.isEmpty()) {
-            String search = "%" + searchText.toLowerCase() + "%";
-
             // TIM CAC PATIENT THOA DIEU KIEN SEARCH
             SearchPatientResponseGRPC patientResponseGRPC = stub.searchPatient(
                     SearchPatientRequestGRPC.newBuilder().setKeyword(searchText).build()
             );
+
+            cachedResponse = patientResponseGRPC;
 
             // LAY ID CUA PATIENT THOA DIEU KIEN
             List<Integer> patientIds = patientResponseGRPC.getPatientsList().stream()
@@ -380,42 +380,86 @@ public class TestOrderService {
             tempPatientIds.addAll(patientIds);
 
             spec = spec.and((root, query, cb) -> {
-                List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
-                predicates.add(cb.like(cb.lower(root.get("status")), search));
-                predicates.add(cb.like(cb.lower(root.get("runBy")), search));
-                predicates.add(cb.like(cb.lower(root.get("createdBy")), search));
-
-                if(!patientIds.isEmpty()) {
-                    predicates.add(root.get("patientTOId").in(patientIds));
+                if (!patientIds.isEmpty()) {
+                    return root.get("patientTOId").in(patientIds);
+                } else {
+                    return cb.disjunction();
                 }
-
-                return cb.or(predicates.toArray(new Predicate[0]));
             });
         }
 
-        //Filter
+
+        // FILTER
         if (filter != null && !filter.isEmpty()) {
             if(filter.containsKey("fromDate")){
-                LocalDateTime fromDate = LocalDateTime.parse(filter.get("fromDate").toString());
-                spec = spec.and((root, query, cb) ->
-                        cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
+                LocalDateTime fromDate;
+                try {
+                    // Handle both LocalDateTime string and date string formats
+                    String fromDateStr = filter.get("fromDate").toString();
+                    if (fromDateStr.contains("T")) {
+                        // Already in LocalDateTime format
+                        fromDate = LocalDateTime.parse(fromDateStr);
+                    } else {
+                        // Convert date string to LocalDateTime (start of day)
+                        fromDate = LocalDate.parse(fromDateStr).atStartOfDay();
+                    }
+
+                    spec = spec.and((root, query, cb) ->
+                            cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
+                } catch (Exception e) {
+                    // Log error but continue without this filter
+                    System.err.println("Error parsing fromDate: " + filter.get("fromDate"));
+                }
             }
 
             if(filter.containsKey("toDate")){
-                LocalDateTime toDate = LocalDateTime.parse(filter.get("toDate").toString());
-                spec = spec.and((root, query, cb) ->
-                        cb.lessThanOrEqualTo(root.get("runAt"), toDate));
-            }
+                LocalDateTime toDate;
+                try {
+                    // Handle both LocalDateTime string and date string formats
+                    String toDateStr = filter.get("toDate").toString();
+                    if (toDateStr.contains("T")) {
+                        // Already in LocalDateTime format
+                        toDate = LocalDateTime.parse(toDateStr);
+                    } else {
+                        // Convert date string to LocalDateTime (end of day)
+                        toDate = LocalDate.parse(toDateStr).atTime(23, 59, 59);
+                    }
 
+                    spec = spec.and((root, query, cb) ->
+                            cb.lessThanOrEqualTo(root.get("runAt"), toDate));
+                } catch (Exception e) {
+                    // Log error but continue without this filter
+                    System.err.println("Error parsing toDate: " + filter.get("toDate"));
+                }
+            }
         }
 
-        Page<TestOrder>  testOrders = testOrderRepository.findAll(spec, pageable);
+        Page<TestOrder> testOrders = testOrderRepository.findAll(spec, pageable);
 
-        List<PatientResponse> matchedPatient = tempPatientIds.stream()
-                .map(t -> stub.getPatientById(PatientRequest.newBuilder().setId(t).build())).toList();
+        if (testOrders.isEmpty()) return Page.empty(pageable);
 
-        Map<Integer, PatientResponse> patientMap = matchedPatient.stream()
-                .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
+        Map<Integer, PatientResponse> patientMap;
+
+        if (!tempPatientIds.isEmpty()) {
+            patientMap = cachedResponse.getPatientsList().stream()
+                    .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
+        } else {
+            Set<Integer> allPatientIds = testOrders.stream()
+                    .map(TestOrder::getPatientTOId)
+                    .collect(Collectors.toSet());
+
+            if (allPatientIds.isEmpty()) {
+                patientMap = Map.of(); // empty map
+            } else {
+                PatientListResponse patientListResponse = stub.getPatientsByIds(
+                        PatientIdsRequest.newBuilder().addAllIds(allPatientIds).build()
+                );
+
+                patientMap = patientListResponse.getPatientsList().stream()
+                        .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
+            }
+        }
+
 
         channel.shutdown();
 
