@@ -33,6 +33,8 @@ spring:
 
   rabbitmq:
     uri: ${SPRING_RABBITMQ_URI}
+    ssl:
+      enabled: true
 
   data:
     mongodb:
