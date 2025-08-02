@@ -1,8 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: production
-
   application:
     name: iam-service
 
@@ -34,6 +30,16 @@ spring:
           starttls:
             enable: true
     default-encoding: UTF-8
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST}
+    port: ${SPRING_RABBITMQ_PORT}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
 
 server:
   port: 8080
