@@ -3,6 +3,7 @@ package com.example.user.controller;
 import com.example.user.dto.role.PageRoleResponse;
 import com.example.user.dto.role.RoleRequest;
 import com.example.user.model.Role;
+import com.example.user.model.UserAuditLog;
 import com.example.user.service.RoleService;
 import com.example.user.dto.role.UpdateRoleRequest;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class RoleController {
     private final RoleService roleService;
     private final RabbitTemplate rabbitTemplate;
+    UserAuditLog auditLog = new UserAuditLog();
 
     public RoleController(RoleService roleService, RabbitTemplate rabbitTemplate) {
         this.roleService = roleService;
@@ -28,7 +30,8 @@ public class RoleController {
     public ResponseEntity<UpdateRoleRequest> create(@RequestBody UpdateRoleRequest role) {
         if (roleService.createRole(role).isPresent()) {
             // Return the created role
-            rabbitTemplate.convertAndSend("appExchange", "role.create", "Role created: " + role.getName());
+            auditLog.setDetails("Role created: " + role.getName());
+            rabbitTemplate.convertAndSend("appExchange", "role.create", auditLog);
             return ResponseEntity.ok(role);
         }
         else return ResponseEntity.badRequest().build();
@@ -39,17 +42,23 @@ public class RoleController {
         dto.setRoleId(id);
         Optional<UpdateRoleRequest> updated = roleService.updateRole(dto);
         if (updated.isPresent()) {
-            rabbitTemplate.convertAndSend("appExchange", "role.update", "Role updated: " + dto.getName());
+            auditLog.setDetails("Role updated: " + dto.getName());
+            rabbitTemplate.convertAndSend("appExchange", "role.update", auditLog);
             return ResponseEntity.ok(dto);
         }
-        else return ResponseEntity.badRequest().build();
+        else {
+            auditLog.setDetails("Role update failed: id=" + id);
+            rabbitTemplate.convertAndSend("appExchange", "role.update.failed", auditLog);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping
     public ResponseEntity<List<Role>> list() {
         List<Role> roles = roleService.getAllRoles();
         // Send RabbitMQ message after listing roles
-        rabbitTemplate.convertAndSend("appExchange", "role.list", "Roles listed: count=" + roles.size());
+        auditLog.setDetails("Roles listed: count=" + roles.size());
+        rabbitTemplate.convertAndSend("appExchange", "role.list", auditLog);
         return ResponseEntity.ok(roles);
     }
 
@@ -57,7 +66,8 @@ public class RoleController {
     public ResponseEntity<Role> get(@PathVariable Long id) {
         var result = roleService.getRoleById(id);
         // Send RabbitMQ message after getting role
-        rabbitTemplate.convertAndSend("appExchange", "role.get", "Role get: id=" + id + ", found=" + result.isPresent());
+        auditLog.setDetails("Role get: id=" + id + ", found=" + result.isPresent());
+        rabbitTemplate.convertAndSend("appExchange", "role.get", auditLog);
         return result.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
@@ -65,7 +75,8 @@ public class RoleController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         roleService.deleteRole(id);
         // Send RabbitMQ message after deleting role
-        rabbitTemplate.convertAndSend("appExchange", "role.delete", "Role deleted: id=" + id);
+        auditLog.setDetails("Role deleted: id=" + id);
+        rabbitTemplate.convertAndSend("appExchange", "role.delete", auditLog);
         return ResponseEntity.noContent().build();
     }
 

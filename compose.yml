@@ -69,6 +69,7 @@ services:
     container_name: iam-service
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
@@ -91,6 +92,7 @@ services:
     container_name: patient-service
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
@@ -115,6 +117,7 @@ services:
     container_name: testorder-service
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444

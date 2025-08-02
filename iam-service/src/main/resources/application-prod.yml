@@ -1,8 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: production
-
   application:
     name: iam-service
 
@@ -35,6 +31,15 @@ spring:
             enable: true
     default-encoding: UTF-8
 
+  rabbitmq:
+    uri: ${SPRING_RABBITMQ_URI}
+    ssl:
+      enabled: true
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
+
 server:
   port: 8080
   servlet:
@@ -48,20 +53,9 @@ management:
   endpoint:
     health:
       show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
-<<<<<<< HEAD
-<<<<<<< HEAD
   health:
     mail:
       enabled: false
-=======
->>>>>>> 1a44319 (chore(config): enable prod configs for iam-service and patient-service)
-=======
-  health:
-    mail:
-      enabled: false
->>>>>>> ac3914a (chore(ci): cleanup GitLab pipelines and disable mail health check)
-  server:
-    port: 8080
 
 logging:
   level:
