@@ -1,8 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: production
-
   application:
     name: testorder-service
 
