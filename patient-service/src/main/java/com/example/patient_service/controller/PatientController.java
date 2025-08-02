@@ -7,6 +7,7 @@ import com.example.patient_service.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,5 +56,22 @@ public class PatientController {
             @RequestParam(defaultValue = "asc") String sortDirection
     ) {
         return ResponseEntity.ok(patientService.allPatientRecords(pageNo, pageSize, sortBy, sortDirection));
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<Page<PatientRecordResponse>> getFilteredPatients(
+            @RequestParam(value = "searchText", required = false) String searchText,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        try {
+            Page<PatientRecordResponse> patients = patientService.getFilteredPatients(
+                    searchText, sortBy, direction, page, size);
+
+            return ResponseEntity.ok(patients);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

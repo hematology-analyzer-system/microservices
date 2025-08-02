@@ -12,4 +12,9 @@ public interface PatientService {
     PatientRecordResponse deletePatientRecord(Integer id);
     PatientRecordResponse getPatientRecord(Integer id);
     Page<PatientRecordResponse> allPatientRecords(Integer pageNo, Integer pageSize, String sortBy, String sortDir);
+    Page<PatientRecordResponse> getFilteredPatients(String searchText,
+                                                    String sortBy,
+                                                    String direction,
+                                                    int offsetPage,
+                                                    int limitOnePage);
 }

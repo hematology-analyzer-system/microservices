@@ -1,5 +1,6 @@
 package com.example.demo.service;
-
+import com.example.demo.Client.ClientRunner;
+import com.example.demo._enum.Gender;
 import com.example.demo.config.JwtProperties;
 import com.example.demo.dto.Comment.MinimalCommentResponse;
 import com.example.demo.dto.DetailResult.DetailResultResponse;
@@ -12,15 +13,13 @@ import com.example.demo.dto.search.SearchDTO;
 import com.example.demo.entity.*;
 import com.example.demo.exception.ApiException;
 import com.example.demo.exception.BadRequestException;
-import com.example.demo.repository.PatientRepository;
+//import com.example.demo.repository.PatientRepository;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
 import com.example.grpc.patient.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import lombok.AllArgsConstructor;
-import org.aspectj.weaver.ast.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.PreDestroy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,11 +42,21 @@ import java.util.stream.Collectors;
 
 
 @Service
-@AllArgsConstructor
 @EnableConfigurationProperties({JwtProperties.class})
 public class TestOrderService {
-    @Autowired
-    private TestOrderRepository testOrderRepository;
+    private final TestOrderRepository testOrderRepository;
+    private final PatientServiceGrpc.PatientServiceBlockingStub stub;
+
+    public TestOrderService(TestOrderRepository testOrderRepository) {
+        this.testOrderRepository = testOrderRepository;
+        this.stub = ClientRunner.getStub(); // lấy stub từ ClientRunner
+    }
+
+    @PreDestroy
+    public void onShutdown() {
+        ClientRunner.shutdown();
+    }
+
 
 
     public TOResponse testGrpc(Integer id){
@@ -71,8 +80,6 @@ public class TestOrderService {
                     .build();
         } catch (Exception e) {
             throw new RuntimeException("gRPC call failed: " + e.getMessage(), e);
-        } finally {
-            channel.shutdownNow();
         }
     }
 
@@ -118,6 +125,7 @@ public class TestOrderService {
                         List<MinimalCommentResponse> commentResult = result.getComment().stream()
                                 .map( detail -> {
                                     MinimalCommentResponse d = new MinimalCommentResponse();
+                                    d.setId(detail.getCommentId());
                                     d.setUpdateBy(detail.getUpdateBy());
                                     d.setContent(detail.getContent());
                                     d.setCreatedBy(detail.getCreateBy());
@@ -143,6 +151,7 @@ public class TestOrderService {
             commentResponses = comment.stream()
                     .map(t -> {
                         MinimalCommentResponse res = new MinimalCommentResponse();
+                        res.setId(t.getCommentId());
                         res.setContent(t.getContent());
                         res.setCreatedBy(t.getCreateBy());
                         res.setUpdateBy(t.getUpdateBy());
@@ -156,6 +165,7 @@ public class TestOrderService {
                 .getAuthentication().getDetails();
 
         return TOResponse.builder()
+                .testId(testOrder.getTestId())
                 .status(testOrder.getStatus())
                 .updateBy(formalizeCreatedBy(
                         currentUser.getUserId(),
@@ -192,13 +202,8 @@ public class TestOrderService {
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9090)
-                .usePlaintext()
-                .build();
 
         try {
-            PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
             PatientResponse response = id.map(pid -> stub.getPatientById(PatientRequest.newBuilder().setId(pid).build()))
                     .orElseGet(() -> {
@@ -226,16 +231,10 @@ public class TestOrderService {
             return toResponse(testOrder, response);
         } catch (Exception e) {
             throw new RuntimeException("gRPC call failed aduni: " + e.getMessage(), e);
-        } finally {
-            channel.shutdownNow();
         }
     }
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO){
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9090)
-                .usePlaintext()
-                .build();
 
         TestOrder testOrder = testOrderRepository.findById(TO_id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
@@ -243,7 +242,6 @@ public class TestOrderService {
 
 
         try {
-            PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
             UpdatePatientRequestGRPC request = UpdatePatientRequestGRPC.newBuilder()
                     .setId(testOrder.getPatientTOId())
@@ -260,8 +258,6 @@ public class TestOrderService {
             return toResponse(testOrder, modifyResponse);
         } catch (Exception e) {
             throw new RuntimeException("gRPC call failed: " + e.getMessage(), e);
-        } finally {
-            channel.shutdownNow();
         }
     }
 
@@ -281,12 +277,6 @@ public class TestOrderService {
                 Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9090)
-                .usePlaintext()
-                .build();
-
-        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
         Page<TestOrder> testOrderPage;
         List<TOResponse> testorderResponses;
@@ -324,7 +314,6 @@ public class TestOrderService {
                     })
                     .toList();
 
-        channel.shutdown();
 
         if(testorderResponses.isEmpty()){
             return PageTOResponse.empty(page, size, sortBy, direction);
@@ -353,13 +342,6 @@ public class TestOrderService {
 
         Specification<TestOrder> spec = ((root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
 
-
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9090)
-                .usePlaintext()
-                .build();
-
-        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
         List<Integer> tempPatientIds = new ArrayList<>();
         SearchPatientResponseGRPC cachedResponse = null;
@@ -461,10 +443,6 @@ public class TestOrderService {
             }
         }
 
-
-        channel.shutdown();
-
-
         return testOrders.map(tOrder -> {
             SearchDTO searchDTO = new SearchDTO();
             searchDTO.setId(tOrder.getTestId());
@@ -493,25 +471,17 @@ public class TestOrderService {
         TestOrder testOrder = testOrderRepository.findById(id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
-        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-            throw new BadRequestException("Test Order Status is Not Completed");
-        }
+//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+//            throw new BadRequestException("Test Order Status is Not Completed");
+//        }
+//
+//        if(testOrder.getResults().isEmpty()){
+//            throw new BadRequestException("Test Order Results is empty!");
+//        }
 
-        if(testOrder.getResults().isEmpty()){
-            throw new BadRequestException("Test Order Results is empty!");
-        }
-
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9090)
-                .usePlaintext()
-                .build();
-
-        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
 
         PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
                 .setId(testOrder.getPatientTOId()).build());
-
-        channel.shutdown();
 
         return toResponse(testOrder, patient);
     }

@@ -207,5 +207,9 @@ public class PatientServiceImpl implements PatientService {
                 .createdAt(patient.getCreatedAt())
                 .updatedAt(patient.getUpdatedAt())
                 .build());
+<<<<<<< Updated upstream
     }
 }
+=======
+}}
+>>>>>>> Stashed changes

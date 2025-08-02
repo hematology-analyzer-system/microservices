@@ -5,6 +5,7 @@ import com.example.demo.dto.Result.ResultResponse;
 import com.example.demo.dto.Result.ReviewResultRequest;
 import com.example.demo.repository.ResultRepository;
 import com.example.demo.service.ResultService;
+import com.example.demo.service.TestOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +15,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/result")
 public class ResultController {
-    @Autowired
-    private ResultService resultService;
+
+    private final ResultService resultService;
 
     @Autowired
-    private ResultRepository resultRepository;
+    public ResultController(ResultService resultService) {
+        this.resultService = resultService;
+    }
 
     @PostMapping("/gen/{testorderId}")
     public ResponseEntity<ResultResponse> genResult(

@@ -1,31 +1,39 @@
 package com.example.demo.Client;
 
-import com.example.grpc.patient.PatientRequest;
-import com.example.grpc.patient.PatientResponse;
 import com.example.grpc.patient.PatientServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import lombok.Getter;
+
+import java.util.concurrent.TimeUnit;
 
 public class ClientRunner {
-    public static void main(String[] args) {
 
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", 9090)
+    private static final String HOST = "host.docker.internal";
+    private static final int PORT = 9090;
+
+    private static final ManagedChannel channel;
+    @Getter
+    private static final PatientServiceGrpc.PatientServiceBlockingStub stub;
+
+    static {
+        channel = ManagedChannelBuilder
+                .forAddress(HOST, PORT)
                 .usePlaintext()
                 .build();
 
-        PatientServiceGrpc.PatientServiceBlockingStub stub = PatientServiceGrpc.newBlockingStub(channel);
+        stub = PatientServiceGrpc.newBlockingStub(channel);
+    }
 
-        PatientRequest myRequest = PatientRequest.newBuilder()
-                .setId(1)
-                .build();
-
-        System.out.println(myRequest.getId());
-
-        PatientResponse myResponse = stub.getPatientById(myRequest);
-
-        System.out.println("this is response: " + myResponse);
-
+    public static void shutdown() {
         channel.shutdown();
+        try {
+            if(!channel.awaitTermination(5, TimeUnit.SECONDS)){
+                System.err.println("Channel did not terminate in time.");
+            }
+        }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while shutting down gRPC channel.");
+        }
     }
 }
