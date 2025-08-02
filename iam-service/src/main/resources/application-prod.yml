@@ -32,10 +32,7 @@ spring:
     default-encoding: UTF-8
 
   rabbitmq:
-    host: ${SPRING_RABBITMQ_HOST}
-    port: ${SPRING_RABBITMQ_PORT}
-    username: ${SPRING_RABBITMQ_USERNAME}
-    password: ${SPRING_RABBITMQ_PASSWORD}
+    uri: ${SPRING_RABBITMQ_URI}
 
   data:
     mongodb:
