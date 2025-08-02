@@ -42,15 +42,32 @@ services:
       timeout: 5s
       retries: 5
 
+  # RabbitMQ Service
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:5672:5672"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # IAM Service
   iam-service:
     build:
       context: ./iam-service
       dockerfile: Dockerfile
     container_name: iam-service
-    depends_on:
-      postgres:
-        condition: service_healthy
+    depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
@@ -72,9 +89,7 @@ services:
       context: ./patient-service
       dockerfile: Dockerfile
     container_name: patient-service
-    depends_on:
-      postgres:
-        condition: service_healthy
+    depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
@@ -89,6 +104,8 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    env_file:
+      - patient-service/.env      # Load env variable for rabbitMQ
 
   # Test Order Service
   testorder-service:
@@ -96,9 +113,7 @@ services:
       context: ./testorder-service
       dockerfile: Dockerfile
     container_name: testorder-service
-    depends_on:
-      postgres:
-        condition: service_healthy
+    depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
       SPRING_DATASOURCE_USERNAME: postgres
@@ -112,25 +127,6 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-
-  # RabbitMQ Service
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "127.0.0.1:15672:15672"
-      - "127.0.0.1:5672:5672"
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     
 volumes:
   postgres_data:

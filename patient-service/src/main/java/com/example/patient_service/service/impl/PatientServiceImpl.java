@@ -4,6 +4,7 @@ import com.example.patient_service.dto.AddPatientRequest;
 import com.example.patient_service.dto.PatientRecordResponse;
 import com.example.patient_service.dto.UpdatePatientRequest;
 import com.example.patient_service.model.Patient;
+import com.example.patient_service.rabbitmq.PatientRabbitMQProducer;
 import com.example.patient_service.repository.PatientRepository;
 import com.example.patient_service.security.CurrentUser;
 import com.example.patient_service.service.PatientService;
@@ -20,8 +21,13 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class PatientServiceImpl implements PatientService {
 
+    // Attribute represents database
     private final PatientRepository patientRepository;
-    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum){
+
+    // Attribute represents RabbitMQ producer to send event to Correct queues
+    private final PatientRabbitMQProducer patientRabbitMQProducer;
+
+    private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum) {
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
@@ -53,9 +59,10 @@ public class PatientServiceImpl implements PatientService {
                 ))
                 .build();
 
-
-
         patientRepository.save(newPatient);
+
+        // Send Add-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendAddPatientEvent(newPatient);
 
         return PatientRecordResponse.builder()
                 .id(newPatient.getId())
@@ -91,8 +98,10 @@ public class PatientServiceImpl implements PatientService {
                 currentUser.getIdentifyNum()
         ));
 
-
         patientRepository.save(updatedPatient);
+
+        // Send Update-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendUpdatePatientEvent(updatedPatient);
 
         return PatientRecordResponse.builder()
                 .id(updatedPatient.getId())
@@ -113,6 +122,9 @@ public class PatientServiceImpl implements PatientService {
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
 
         patientRepository.deleteById(id);
+
+        // Sent Delete-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendDeletePatientEvent(deletePatient);
 
         return PatientRecordResponse.builder()
                 .id(deletePatient.getId())
@@ -160,16 +172,16 @@ public class PatientServiceImpl implements PatientService {
         Page<Patient> patientPage = patientRepository.findAll(pageable);
 
         return patientPage.map(patient -> PatientRecordResponse.builder()
-                    .id(patient.getId())
-                    .fullName(patient.getFullName())
-                    .address(patient.getAddress())
-                    .email(patient.getEmail())
-                    .phone(patient.getPhone())
-                    .dateOfBirth(patient.getDateOfBirth())
-                    .gender(patient.getGender())
-                    .createdAt(patient.getCreatedAt())
-                    .updatedAt(patient.getUpdatedAt())
-                    .build()
+                .id(patient.getId())
+                .fullName(patient.getFullName())
+                .address(patient.getAddress())
+                .email(patient.getEmail())
+                .phone(patient.getPhone())
+                .dateOfBirth(patient.getDateOfBirth())
+                .gender(patient.getGender())
+                .createdAt(patient.getCreatedAt())
+                .updatedAt(patient.getUpdatedAt())
+                .build()
         );
     }
 
@@ -207,4 +219,5 @@ public class PatientServiceImpl implements PatientService {
                 .createdAt(patient.getCreatedAt())
                 .updatedAt(patient.getUpdatedAt())
                 .build());
+    }
 }
