@@ -18,6 +18,16 @@ spring:
         format_sql: false
         use_sql_comments: false
 
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST}
+    port: ${SPRING_RABBITMQ_PORT}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
+
 server:
   port: 8081
   servlet:
