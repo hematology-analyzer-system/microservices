@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.sql.Timestamp;
 
 @Data
 @NoArgsConstructor
@@ -21,7 +22,11 @@ public class UserAuditLog {
     private String identifyNum;
     private String action;
     private String details;
-    private String timestamp;
+    private Timestamp timestamp;
+    
+    public Timestamp getTimestamp() {
+        return timestamp;
+    }
 
     public void setUserName(String username) {
         this.username = username;
