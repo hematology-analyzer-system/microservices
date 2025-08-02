@@ -106,6 +106,8 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    env_file:
+      - patient-service/.env      # Load env variable for rabbitMQ
 
   # Test Order Service
   testorder-service:

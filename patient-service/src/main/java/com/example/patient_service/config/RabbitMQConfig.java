@@ -1,11 +1,12 @@
 package com.example.patient_service.config;
 
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -13,54 +14,75 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
+    // Name of Exchange point for patient
+    public static final String PATIENT_EXCHANGE = "patient.exchange";
+
+    // Name of Queues for patient
+    public static final String PATIENT_ADD_QUEUE = "patient.add.queue";
+    public static final String PATIENT_UPDATE_QUEUE = "patient.update.queue";
+    public static final String PATIENT_DELETE_QUEUE = "patient.delete.queue";
+
+    // Name of Routing keys for patient
+    public static final String PATIENT_ADD_ROUTING_KEY = "patient.add.routing.key";
+    public static final String PATIENT_UPDATE_ROUTING_KEY = "patient.update.routing.key";
+    public static final String PATIENT_DELETE_ROUTING_KEY = "patient.delete.routing.key";
+
+
+    /* ************************************* */
+    // 1. Create exchange point for RabbitMQ //
+    /* ************************************* */
     @Bean
-    public org.springframework.amqp.core.TopicExchange appExchange() {
-        return new org.springframework.amqp.core.TopicExchange("appExchange");
+    public TopicExchange patientTopicExchange() {
+        return new TopicExchange(PATIENT_EXCHANGE);
+    }
+
+
+    /* ************************************* */
+    // 2. Create queues for story data       //
+    /* ************************************* */
+    @Bean
+    public Queue patientAddQueue() {
+        return new Queue(PATIENT_ADD_QUEUE);
     }
 
     @Bean
-    public org.springframework.amqp.core.Binding requestBinding(Queue requestQueue, org.springframework.amqp.core.TopicExchange appExchange) {
-        return org.springframework.amqp.core.BindingBuilder.bind(requestQueue).to(appExchange).with("request.key");
+    public Queue patientUpdateQueue() {
+        return new Queue(PATIENT_UPDATE_QUEUE);
     }
 
     @Bean
-    public org.springframework.amqp.core.Binding responseBinding(Queue responseQueue, org.springframework.amqp.core.TopicExchange appExchange) {
-        return org.springframework.amqp.core.BindingBuilder.bind(responseQueue).to(appExchange).with("response.key");
+    public Queue patientDeleteQueue() {
+        return new Queue(PATIENT_DELETE_QUEUE);
     }
+
+
+    /* ********************************************************* */
+    // 3. Binding EXCHANGE to QUEUE through exact ROUTING_KEY    //
+    /* ********************************************************* */
     @Bean
-    public Queue requestQueue() {
-        return new Queue("requestQueue", true);
+    public Binding patientAddBinding(Queue patientAddQueue, TopicExchange patientTopicExchange) {
+        return BindingBuilder.bind(patientAddQueue).to(patientTopicExchange).with(PATIENT_ADD_ROUTING_KEY);
     }
 
     @Bean
-    public Queue responseQueue() {
-        return new Queue("responseQueue", true);
+    public Binding patientUpdateBinding(Queue patientUpdateQueue, TopicExchange patientTopicExchange) {
+        return BindingBuilder.bind(patientUpdateQueue).to(patientTopicExchange).with(PATIENT_UPDATE_ROUTING_KEY);
     }
 
     @Bean
-    public TopicExchange patientExchange() {
-        return new TopicExchange("patientExchange");
+    public Binding patientDeleteBinding(Queue patientDeleteQueue, TopicExchange patientTopicExchange) {
+        return BindingBuilder.bind(patientDeleteQueue).to(patientTopicExchange).with(PATIENT_DELETE_ROUTING_KEY);
     }
 
-    @Bean
-    public Queue patientQueue() {
-        return new Queue("patientQueue", true);
-    }
 
+    /* ******************************************************************** */
+    // Create configuration used for RabbitMQ serialize/deserialize JSON    //
+    /* ******************************************************************** */
     @Bean
-    public Binding binding(Queue patientQueue, TopicExchange patientExchange) {
-        return BindingBuilder.bind(patientQueue).to(patientExchange).with("patient.created");
-    }
-    
-    @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter(); // Use JSON message converter
-    }
-
-    @Bean
-    public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(jsonMessageConverter()); // Set the message converter
-        return rabbitTemplate; // Return the configured RabbitTemplate
+    public MessageConverter JSONMessageConverter() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 }
