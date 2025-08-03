@@ -18,6 +18,10 @@ spring:
         format_sql: false
         use_sql_comments: false
 
+  grpc:
+    server:
+      port: 9091
+
   rabbitmq:
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
