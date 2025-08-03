@@ -19,7 +19,11 @@ spring:
         use_sql_comments: false
 
   rabbitmq:
-    uri: ${SPRING_RABBITMQ_URI}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST}
     ssl:
       enabled: true
 
