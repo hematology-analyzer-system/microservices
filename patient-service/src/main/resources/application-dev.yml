@@ -13,13 +13,24 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/patient
+    url: jdbc:postgresql://localhost:5432/patient-db
     username: postgres
     password: trquth1209
 
   grpc:
     server:
       port: 9090
+
+  rabbitmq:
+    host: host.docker.internal
+    port: 5672
+    username: guest
+    password: guest
+
+  data:
+    mongodb:
+      uri: ${MONGO_URI_PATIENT}
+      database: ${MONGO_DATABASE_NAME}
 
 management:
   endpoints:
@@ -41,3 +52,9 @@ logging:
   level:
     org.springframework.grpc: DEBUG
 
+
+  rabbitmq:
+    host: host.docker.internal
+    port: 5672
+    username: guest
+    password: guest

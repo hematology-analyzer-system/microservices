@@ -2,11 +2,13 @@ package com.example.user.controller;
 
 import com.example.user.dto.userdto.*;
 import com.example.user.model.User;
+import com.example.user.model.UserAuditLog;
 import com.example.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,13 +25,18 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final RabbitTemplate rabbitTemplate;
+    UserAuditLog auditLog = new UserAuditLog();
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, RabbitTemplate rabbitTemplate) {
         this.userService = userService;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
+        auditLog.setDetails("User created: " + request.getFullName());
+        rabbitTemplate.convertAndSend("appExchange", "user.create", auditLog);
         return userService.createUser(request);
     }
 
@@ -41,6 +48,9 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<FetchUserResponse> get(@PathVariable Long id) {
+        auditLog.setUserId(id);
+        auditLog.setDetails("User get: id=" + id);
+        rabbitTemplate.convertAndSend("appExchange", "user.get", auditLog);
         return userService.getUserById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -48,7 +58,11 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        userService.deleteUser(id);
+        auditLog.setUserId(id);
+        
+        auditLog.setDetails("User deleted: id=" + id);
+        rabbitTemplate.convertAndSend("appExchange", "user.delete", auditLog);
+        
         return ResponseEntity.noContent().build();
     }
 
@@ -60,6 +74,9 @@ public class UserController {
         Files.copy(file.getInputStream(), path);
 
         String publicUrl = "http://localhost:8080/upload/images/" + filename;
+        
+        auditLog.setDetails("Profile picture uploaded: " + publicUrl);
+        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", auditLog);
         return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
     }
 
@@ -76,6 +93,13 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<FetchUserResponse> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest dto) {
+        auditLog.setUserId(id);
+        auditLog.setFullName(dto.getFullName());
+        auditLog.setEmail(dto.getEmail());
+        auditLog.setIdentifyNum(dto.getIdentifyNum());
+
+        auditLog.setDetails("User updated: " + dto.getFullName());
+        rabbitTemplate.convertAndSend("appExchange", "user.update", auditLog);
         return userService.FetchUserDetails(id, dto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -86,6 +110,9 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody @Valid ChangePasswordRequest request) {
         userService.changePassword(userId, request);
+        auditLog.setUserId(userId);
+        auditLog.setDetails("Password changed for user ID: " + userId);
+        rabbitTemplate.convertAndSend("appExchange", "user.changePassword", auditLog);
         return ResponseEntity.ok("Password changed successfully.");
     }
 

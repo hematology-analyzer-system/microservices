@@ -45,7 +45,7 @@ def main():
         sys.exit(1)
 
     if len(sys.argv) != 2:
-        print("Usage: python reset.py <iam|patient|testorder|all>")
+        print("Usage: python reset.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
     target = sys.argv[1].lower()
@@ -54,14 +54,17 @@ def main():
         "iam": ["iam-service"],
         "patient": ["patient-service"],
         "testorder": ["testorder-service"],
-        "all": ["iam-service", "patient-service", "testorder-service"],
+        "mongodb": ["mongodb"],
+        "rabbitmq": ["rabbitmq"],
+        "postgres": ["postgres"],
+        "all": ["iam-service", "patient-service", "testorder-service", "mongodb", "rabbitmq", "postgres"],
     }
 
     if target in services_map:
         reset_service(target, services_map[target])
     else:
         print(f"Unknown option: '{target}'")
-        print("Usage: python reset.py <iam|patient|testorder|all>")
+        print("Usage: python reset.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
 

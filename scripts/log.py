@@ -17,7 +17,10 @@ def get_service_container_names(target):
         "iam": ["iam-service"],
         "patient": ["patient-service"],
         "testorder": ["testorder-service"],
-        "all": ["iam-service", "patient-service", "testorder-service"],
+        "mongodb": ["mongodb"],
+        "rabbitmq": ["rabbitmq"],
+        "postgres": ["shared-postgres"],
+        "all": ["iam-service", "patient-service", "testorder-service", "mongodb", "rabbitmq", "shared-postgres"],
     }
     return service_map.get(target)
 
@@ -45,7 +48,7 @@ def stream_logs(container_names):
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python log.py <iam|patient|testorder|all>")
+        print("Usage: python log.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
     target = sys.argv[1].lower()
@@ -55,7 +58,7 @@ def main():
         stream_logs(container_names)
     else:
         print(f"Unknown option: '{target}'")
-        print("Usage: python log.py <iam|patient|testorder|all>")
+        print("Usage: python log.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
 

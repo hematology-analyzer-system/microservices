@@ -4,6 +4,7 @@ import com.example.patient_service.dto.AddPatientRequest;
 import com.example.patient_service.dto.PatientRecordResponse;
 import com.example.patient_service.dto.UpdatePatientRequest;
 import com.example.patient_service.model.Patient;
+import com.example.patient_service.rabbitmq.PatientRabbitMQProducer;
 import com.example.patient_service.repository.PatientRepository;
 import com.example.patient_service.security.CurrentUser;
 import com.example.patient_service.service.PatientService;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Service;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
+
+    // Attribute represents RabbitMQ producer to send event to Correct queues
+    private final PatientRabbitMQProducer patientRabbitMQProducer;
 
     private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum) {
         return String.format(
@@ -56,6 +60,9 @@ public class PatientServiceImpl implements PatientService {
 
 
         patientRepository.save(newPatient);
+
+        // Send Add-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendAddPatientEvent(newPatient);
 
         return PatientRecordResponse.builder()
                 .id(newPatient.getId())
@@ -94,6 +101,9 @@ public class PatientServiceImpl implements PatientService {
 
         patientRepository.save(updatedPatient);
 
+        // Send Update-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendUpdatePatientEvent(updatedPatient);
+
         return PatientRecordResponse.builder()
                 .id(updatedPatient.getId())
                 .fullName(updatedPatient.getFullName())
@@ -113,6 +123,9 @@ public class PatientServiceImpl implements PatientService {
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
 
         patientRepository.deleteById(id);
+
+        // Sent Delete-patient-event to RabbitMQ
+        patientRabbitMQProducer.sendDeletePatientEvent(deletePatient);
 
         return PatientRecordResponse.builder()
                 .id(deletePatient.getId())
@@ -207,9 +220,5 @@ public class PatientServiceImpl implements PatientService {
                 .createdAt(patient.getCreatedAt())
                 .updatedAt(patient.getUpdatedAt())
                 .build());
-<<<<<<< Updated upstream
     }
 }
-=======
-}}
->>>>>>> Stashed changes

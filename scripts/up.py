@@ -31,23 +31,26 @@ def main():
         sys.exit(1)
 
     if len(sys.argv) != 2:
-        print("Usage: python up.py <iam|patient|testorder|all>")
+        print("Usage: python up.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
     target = sys.argv[1].lower()
 
     services_map = {
-        "iam": ["postgres", "iam-service"],
-        "patient": ["postgres", "patient-service"],
-        "testorder": ["postgres", "testorder-service"],
-        "all": ["postgres", "iam-service", "patient-service", "testorder-service"],
+        "iam": ["postgres", "mongodb", "rabbitmq", "iam-service"],
+        "patient": ["postgres", "mongodb", "rabbitmq", "patient-service"],
+        "testorder": ["postgres", "mongodb", "rabbitmq", "testorder-service"],
+        "mongodb": ["mongodb"],
+        "rabbitmq": ["rabbitmq"],
+        "postgres": ["postgres"],
+        "all": ["postgres", "mongodb", "rabbitmq", "iam-service", "patient-service", "testorder-service"],
     }
 
     if target in services_map:
         run_services(services_map[target])
     else:
         print(f"Unknown option: '{target}'")
-        print("Usage: python up.py <iam|patient|testorder|all>")
+        print("Usage: python up.py <iam|patient|testorder|mongodb|rabbitmq|postgres|all>")
         sys.exit(1)
 
 

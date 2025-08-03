@@ -31,8 +31,8 @@ build-patient-service:
     echo "Building Patient Service using Dockerfile..."
     export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
     echo "Build tag - $BUILD_TAG"
-    echo "Building multi-stage Dockerfile builder stage only for artifacts"
-    docker build --target builder -t patient-service-build:$BUILD_TAG .
+    echo "Building multi-stage Dockerfile build stage only for artifacts"
+    docker build --target build -t patient-service-build:$BUILD_TAG .
     echo "Extracting built JAR for artifacts"
     docker create --name temp-container patient-service-build:$BUILD_TAG
     docker cp temp-container:/app/target/ ./
