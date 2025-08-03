@@ -1,8 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: production
-
   application:
     name: patient-service
 
@@ -21,6 +17,19 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
         use_sql_comments: false
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST}
+    ssl:
+      enabled: true
+
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
 
 server:
   port: 8081
@@ -43,3 +52,6 @@ logging:
     root: ${LOGGING_LEVEL_ROOT:WARN}
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+
+jwt:
+  secret: ${JWT_SECRET}
