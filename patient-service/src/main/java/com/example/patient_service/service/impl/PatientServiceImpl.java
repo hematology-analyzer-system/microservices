@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class PatientServiceImpl implements PatientService {
 
-    // Attribute represents database
     private final PatientRepository patientRepository;
 
     // Attribute represents RabbitMQ producer to send event to Correct queues
@@ -58,6 +57,7 @@ public class PatientServiceImpl implements PatientService {
                         currentUser.getIdentifyNum()
                 ))
                 .build();
+
 
         patientRepository.save(newPatient);
 
@@ -97,6 +97,7 @@ public class PatientServiceImpl implements PatientService {
                 currentUser.getEmail(),
                 currentUser.getIdentifyNum()
         ));
+
 
         patientRepository.save(updatedPatient);
 

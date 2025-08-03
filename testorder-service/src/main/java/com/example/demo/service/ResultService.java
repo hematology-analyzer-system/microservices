@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo._enum.Gender;
+import com.example.demo.Client.ClientRunner;
 import com.example.demo.dto.DetailResult.DetailResultResponse;
 import com.example.demo.dto.Result.ResultResponse;
 import com.example.demo.dto.Result.ReviewResultRequest;
@@ -10,6 +11,12 @@ import com.example.demo.exception.BadRequestException;
 import com.example.demo.repository.ResultRepository;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
+import com.example.grpc.patient.PatientRequest;
+import com.example.grpc.patient.PatientResponse;
+import com.example.grpc.patient.PatientServiceGrpc;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,10 +28,23 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
 public class ResultService {
-    private ResultRepository resultRepository;
-    private TestOrderRepository testOrderRepository;
+    private final ResultRepository resultRepository;
+    private final TestOrderRepository testOrderRepository;
+
+    private final PatientServiceGrpc.PatientServiceBlockingStub stub;
+
+    public ResultService(ResultRepository resultRepository, TestOrderRepository testOrderRepository) {
+        this.resultRepository = resultRepository;
+        this.testOrderRepository = testOrderRepository;
+        this.stub = ClientRunner.getStub();
+    }
+
+    @PreDestroy
+    public void onDestroy(){
+        ClientRunner.shutdown();
+    }
+
 
     private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
         return String.format(
@@ -91,7 +111,9 @@ public class ResultService {
         result.setTestOrder(testOrder);
         testOrder.getResults().add(result);
 
-        Patient patient = testOrder.getPatient();
+
+        PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
+                .setId(testOrder.getPatientTOId()).build());
 
         CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
@@ -99,7 +121,8 @@ public class ResultService {
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
 
-        List<DetailResult> detailResults = genAllDetailResult(patient.getGender());
+        List<DetailResult> detailResults = genAllDetailResult(patient.getGender()
+                .equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE);
 
 
 

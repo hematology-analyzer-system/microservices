@@ -5,7 +5,6 @@ import com.example.demo.dto.TestOrder.PageTOResponse;
 import com.example.demo.dto.TestOrder.TOResponse;
 import com.example.demo.dto.TestOrder.UpdateTORequest;
 import com.example.demo.dto.search.SearchDTO;
-import com.example.demo.entity.TestOrder;
 import com.example.demo.service.TestOrderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +23,16 @@ public class TestOrderController {
 
     @Autowired
     private TestOrderService testOrderService;
+
+    @GetMapping("/grpc/{id}")
+    public ResponseEntity<TOResponse> grpcTesting(
+            @PathVariable Integer id
+    ){
+        TOResponse toResponse = testOrderService.testGrpc(id);
+
+        return ResponseEntity.ok(toResponse);
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<TOResponse> createWithoutId(
@@ -84,16 +94,21 @@ public class TestOrderController {
         return ResponseEntity.ok(pageTOResponse);
     }
 
-    @GetMapping("/filter")
-    public ResponseEntity<Page<SearchDTO>> getFilteredTestOrders(
+    @GetMapping("filter")
+    public ResponseEntity<Page<SearchDTO>> filterTestOrder(
             @RequestParam(required = false) String searchText,
+//            @RequestParam(required = false) Map<String, Object> filter,
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(defaultValue = "runAt") String sortBy,
             @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(defaultValue = "1") int offsetPage,
-            @RequestParam(defaultValue = "10") int limitOnePage
-    ) {
+            @RequestParam(defaultValue = "12") int limitOnePage
+    ){
+//        Page<SearchDTO> pageSearch = testOrderService.getFilterTO(searchText, filter, sortBy, direction, offsetPage, limitOnePage);
+//
+//        return ResponseEntity.ok(pageSearch);
+
         try {
             // Build filter map
             Map<String, Object> filter = new HashMap<>();
