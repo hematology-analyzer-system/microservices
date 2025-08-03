@@ -23,51 +23,34 @@ public class JwtService {
 //    private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     public String generateToken(User user) {
-//        Map<String, Object> claims = new HashMap<>();
-//
-//
-////        claims.put("email", user.getEmail());
-//        claims.put("status", user.getStatus());
-//
-//
-//        Set<Map<String, Object>> userRoles = new HashSet<>();
-//        Set<Long> privilegeIds = new HashSet<>();
-//
-//        if (user.getRoles() != null) {
-//            for (Role role : user.getRoles()) {
-//                Map<String, Object> roleInfo = new HashMap<>();
-//                roleInfo.put("id", role.getRoleId());
-//                roleInfo.put("name", role.getName());
-//                roleInfo.put("code", role.getCode());
-//                userRoles.add(roleInfo);
-//
-//                if (role.getPrivileges() != null) {
-//                    for (Privilege privilege : role.getPrivileges()) {
-//                        privilegeIds.add(privilege.getPrivilegeId());
-//                    }
-//                }
-//            }
-//        }
-//
-//        claims.put("roles", userRoles);
-//        claims.put("privilege_ids", privilegeIds);
-
         Map<String, Object> claims = new HashMap<>();
+
         claims.put("userid", user.getId());
         claims.put("fullName", user.getFullName());
         claims.put("email", user.getEmail());
-        claims.put("identifyNum", user.getIdentifyNum());
+
+        Set<Long> privilegeIds = new HashSet<>();
+        if (user.getRoles() != null) {
+            for (Role role : user.getRoles()) {
+                if (role.getPrivileges() != null) {
+                    for (Privilege privilege : role.getPrivileges()) {
+                        privilegeIds.add(privilege.getPrivilegeId());
+                    }
+                }
+            }
+        }
+
+        claims.put("privilege_ids", privilegeIds);
 
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getUsername())
                 .setIssuedAt(new Date())
-                // Set expiration to 1 day (86,400,000 milliseconds).
-                // Consider shorter lifespans for access tokens and use refresh tokens for longer sessions.
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 day
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
 
     public String extractUsername(String token) {
         return Jwts.parserBuilder()

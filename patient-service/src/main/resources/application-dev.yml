@@ -11,12 +11,15 @@ spring:
         format_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        default_schema: patient_schema
 
   datasource:
     url: jdbc:postgresql://localhost:5432/patient-db
     username: postgres
     password: trquth1209
+
+  grpc:
+    server:
+      port: 9090
 
   rabbitmq:
     host: host.docker.internal
@@ -44,6 +47,11 @@ server:
     context-path: /patient
 jwt:
   secret: "my-super-ultra-promax-vip-pro-password-32-bytes-long"
+
+logging:
+  level:
+    org.springframework.grpc: DEBUG
+
 
   rabbitmq:
     host: host.docker.internal
