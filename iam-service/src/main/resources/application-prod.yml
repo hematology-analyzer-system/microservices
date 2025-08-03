@@ -30,6 +30,14 @@ spring:
           auth: true
           starttls:
             enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  grpc:
+    server:
+      port: 9090
 
   rabbitmq:
     host: ${RABBITMQ_HOST}

@@ -19,7 +19,7 @@ spring:
 
   grpc:
     server:
-      port: 9090
+      port: 9091
 
   rabbitmq:
     host: host.docker.internal
@@ -51,7 +51,6 @@ jwt:
 logging:
   level:
     org.springframework.grpc: DEBUG
-
 
   rabbitmq:
     host: host.docker.internal
