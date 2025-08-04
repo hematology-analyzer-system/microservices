@@ -92,6 +92,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Use the corsConfigurationSource bean
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers(
+                                        "/actuator/health",
+                                        "/actuator/info"
+                                )
+                                .permitAll()
 //                                .requestMatchers("/auth/register").permitAll()
 //                        .requestMatchers("/public/**").permitAll() // Add any other public endpoints
                                 .anyRequest().authenticated()
