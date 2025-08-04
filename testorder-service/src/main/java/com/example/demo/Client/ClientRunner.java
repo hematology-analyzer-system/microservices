@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientRunner {
 
     private static final String HOST = "host.docker.internal";
-    private static final int PORT = 9090;
+    private static final int PORT = 9091;
 
     private static final ManagedChannel channel;
     @Getter

@@ -46,7 +46,7 @@ public class GlobalCorsConfig {
                                 "https://netlify.khoa.email",
                                 "https://healthcare.khoa.email"
                         ) // frontend URL
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }
