@@ -6,6 +6,7 @@ import com.example.user.model.UserAuditLog;
 import com.example.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -57,13 +58,30 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         auditLog.setUserId(id);
         
         auditLog.setDetails("User deleted: id=" + id);
         rabbitTemplate.convertAndSend("appExchange", "user.delete", auditLog);
-        
-        return ResponseEntity.noContent().build();
+        if (userService.softDeleteUser(id) == 1) {
+            return ResponseEntity.ok(Collections.singletonMap("message", "Soft delete user successfully."));
+        }
+        else if (userService.softDeleteUser(id) == 0) {
+            return new ResponseEntity<>(Collections.singletonMap("error", "Access denied: Insufficient privileges."), HttpStatus.FORBIDDEN);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody UpdateStatusUser request) {
+        if (request.isLock()) {
+            if (userService.unlockUser(id) == 1) return ResponseEntity.ok(Collections.singletonMap("message", "User unlocked successfully."));
+            else if (userService.unlockUser(id) == 0) return new ResponseEntity<>(Collections.singletonMap("error", "Access denied: Insufficient privileges."), HttpStatus.FORBIDDEN);
+        } else {
+            if (userService.lockUser(id) == 1) return ResponseEntity.ok(Collections.singletonMap("message", "User locked successfully."));
+            else if (userService.lockUser(id) == 0) return new ResponseEntity<>(Collections.singletonMap("error", "Access denied: Insufficient privileges."), HttpStatus.FORBIDDEN);
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/upload")
