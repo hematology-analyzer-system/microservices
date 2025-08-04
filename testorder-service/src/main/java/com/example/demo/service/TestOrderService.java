@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +41,9 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @EnableConfigurationProperties({JwtProperties.class})
 public class TestOrderService {
@@ -198,6 +201,10 @@ public class TestOrderService {
     public TOResponse createTO(AddTORequest  addTORequest, Optional<Integer> id) {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(2L)&&!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to createTO");
+        }
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -239,6 +246,12 @@ public class TestOrderService {
         TestOrder testOrder = testOrderRepository.findById(TO_id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to modifyTO");
+        }
 
 
         try {
@@ -262,6 +275,13 @@ public class TestOrderService {
     }
 
     public void deteleTestOrder(Long TO_id){
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(4L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to deleteTO");
+        }
+
         testOrderRepository.deleteById(TO_id);
     }
 
@@ -345,6 +365,12 @@ public class TestOrderService {
 
         List<Integer> tempPatientIds = new ArrayList<>();
         SearchPatientResponseGRPC cachedResponse = null;
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(1L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to get filterTO");
+        }
 
         // Search
         if (searchText != null && !searchText.isEmpty()) {
@@ -470,7 +496,12 @@ public class TestOrderService {
     public TOResponse viewDetail(Long id){
         TestOrder testOrder = testOrderRepository.findById(id)
                 .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
-
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(1L)&&!userPrivileges.contains(5L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to view detail TO");
+        }
 //        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
 //            throw new BadRequestException("Test Order Status is Not Completed");
 //        }
