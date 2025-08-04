@@ -122,30 +122,58 @@ public class UserService {
         String subject = "Activate Your Account";
         String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
 
+//        String emailBody = "<!DOCTYPE html>" +
+//                "<html>" +
+//                "<head>" +
+//                "  <style>" +
+//                "    .button {" +
+//                "      background-color: #4CAF50;" +
+//                "      color: white;" +
+//                "      padding: 12px 20px;" +
+//                "      text-align: center;" +
+//                "      text-decoration: none;" +
+//                "      display: inline-block;" +
+//                "      font-size: 16px;" +
+//                "      border-radius: 5px;" +
+//                "    }" +
+//                "  </style>" +
+//                "</head>" +
+//                "<body>" +
+//                "  <p>Hello,</p>" +
+//                "  <p>Thank you for registering. Please click the button below to activate your account:</p>" +
+//                "  <a href=\"" + frontendLink + "\" class=\"button\">Activate Account</a>" +
+//                "  <p>If the button doesn't work, you can copy and paste this link into your browser:</p>" +
+//                "  <p>" + frontendLink + "</p>" +
+//                "</body>" +
+//                "</html>";
         String emailBody = "<!DOCTYPE html>" +
                 "<html>" +
                 "<head>" +
-                "  <style>" +
-                "    .button {" +
-                "      background-color: #4CAF50;" +
-                "      color: white;" +
-                "      padding: 12px 20px;" +
-                "      text-align: center;" +
-                "      text-decoration: none;" +
-                "      display: inline-block;" +
-                "      font-size: 16px;" +
-                "      border-radius: 5px;" +
-                "    }" +
-                "  </style>" +
+                "  <meta charset=\"UTF-8\">" +
+                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
                 "</head>" +
-                "<body>" +
-                "  <p>Hello,</p>" +
-                "  <p>Thank you for registering. Please click the button below to activate your account:</p>" +
-                "  <a href=\"" + frontendLink + "\" class=\"button\">Activate Account</a>" +
-                "  <p>If the button doesn't work, you can copy and paste this link into your browser:</p>" +
-                "  <p>" + frontendLink + "</p>" +
+                "<body style=\"margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f4f4f4;\">" +
+                "  <table width=\"100%\" bgcolor=\"#f4f4f4\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
+                "    <tr><td style=\"padding: 20px 0;\">" +
+                "      <table align=\"center\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" style=\"background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);\">" +
+                "        <tr>" +
+                "          <td style=\"padding: 30px; text-align: center;\">" +
+                "            <h2 style=\"color: #333333;\">Welcome to Our Service</h2>" +
+                "            <p style=\"color: #555555; font-size: 16px; line-height: 1.5;\">Thank you for registering. To activate your account, click the button below:</p>" +
+                "            <a href=\"" + frontendLink + "\" style=\"display: inline-block; margin: 20px 0; padding: 14px 24px; font-size: 16px; color: #ffffff; background-color: #4CAF50; text-decoration: none; border-radius: 6px;\">Activate Account</a>" +
+                "            <p style=\"color: #999999; font-size: 14px;\">If the button doesn't work, copy and paste the following link into your browser:</p>" +
+                "            <p style=\"word-break: break-all; color: #4CAF50; font-size: 14px;\">" + frontendLink + "</p>" +
+                "          </td>" +
+                "        </tr>" +
+                "        <tr>" +
+                "          <td style=\"padding: 20px; text-align: center; color: #aaaaaa; font-size: 12px;\">&copy; 2025 Your Company. All rights reserved.</td>" +
+                "        </tr>" +
+                "      </table>" +
+                "    </td></tr>" +
+                "  </table>" +
                 "</body>" +
                 "</html>";
+
 
         emailService.sendEmail(email, subject, emailBody);
     }
@@ -159,6 +187,49 @@ public class UserService {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+
+    public int softDeleteUser(Long id) {
+        User currentUser = getCurrentUser();
+        if (validatePrivileges(currentUser, 16L) || validatePrivileges(currentUser, 17L)) {
+            Optional<User> user = userRepository.findById(id);
+            if (user.isEmpty()) {
+                return 2;
+            }
+            user.get().setStatus("INACTIVE");
+            userRepository.save(user.get());
+            return 1;
+        }
+
+        return 0;
+    }
+
+    public int lockUser(Long id) {
+        User currentUser = getCurrentUser();
+        if (validatePrivileges(currentUser, 17L)) {
+            Optional<User> user = userRepository.findById(id);
+            if (user.isEmpty()) {
+                return 2;
+            }
+            user.get().setStatus("INACTIVE");
+            userRepository.save(user.get());
+            return 1;
+        }
+        return 0;
+    }
+
+    public int unlockUser(Long id) {
+        User currentUser = getCurrentUser();
+        if (validatePrivileges(currentUser, 17L)) {
+            Optional<User> user = userRepository.findById(id);
+            if (user.isEmpty()) {
+                return 2;
+            }
+            user.get().setStatus("ACTIVE");
+            userRepository.save(user.get());
+            return 1;
+        }
+        return 0;
     }
 
     public boolean assignRoleToUser(Long userId, List<Long> roleIds) {
