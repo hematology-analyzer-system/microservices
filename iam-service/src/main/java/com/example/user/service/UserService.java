@@ -118,65 +118,110 @@ public class UserService {
         return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Invalid request"));
     }
 
-    private void sendMailActivation(String email) {
-        String subject = "Activate Your Account";
-        String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
-
+//    private void sendMailActivation(String email) {
+//        String subject = "Activate Your Account";
+//        String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
+//
+////        String emailBody = "<!DOCTYPE html>" +
+////                "<html>" +
+////                "<head>" +
+////                "  <style>" +
+////                "    .button {" +
+////                "      background-color: #4CAF50;" +
+////                "      color: white;" +
+////                "      padding: 12px 20px;" +
+////                "      text-align: center;" +
+////                "      text-decoration: none;" +
+////                "      display: inline-block;" +
+////                "      font-size: 16px;" +
+////                "      border-radius: 5px;" +
+////                "    }" +
+////                "  </style>" +
+////                "</head>" +
+////                "<body>" +
+////                "  <p>Hello,</p>" +
+////                "  <p>Thank you for registering. Please click the button below to activate your account:</p>" +
+////                "  <a href=\"" + frontendLink + "\" class=\"button\">Activate Account</a>" +
+////                "  <p>If the button doesn't work, you can copy and paste this link into your browser:</p>" +
+////                "  <p>" + frontendLink + "</p>" +
+////                "</body>" +
+////                "</html>";
 //        String emailBody = "<!DOCTYPE html>" +
 //                "<html>" +
 //                "<head>" +
-//                "  <style>" +
-//                "    .button {" +
-//                "      background-color: #4CAF50;" +
-//                "      color: white;" +
-//                "      padding: 12px 20px;" +
-//                "      text-align: center;" +
-//                "      text-decoration: none;" +
-//                "      display: inline-block;" +
-//                "      font-size: 16px;" +
-//                "      border-radius: 5px;" +
-//                "    }" +
-//                "  </style>" +
+//                "  <meta charset=\"UTF-8\">" +
+//                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
 //                "</head>" +
-//                "<body>" +
-//                "  <p>Hello,</p>" +
-//                "  <p>Thank you for registering. Please click the button below to activate your account:</p>" +
-//                "  <a href=\"" + frontendLink + "\" class=\"button\">Activate Account</a>" +
-//                "  <p>If the button doesn't work, you can copy and paste this link into your browser:</p>" +
-//                "  <p>" + frontendLink + "</p>" +
+//                "<body style=\"margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f4f4f4;\">" +
+//                "  <table width=\"100%\" bgcolor=\"#f4f4f4\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
+//                "    <tr><td style=\"padding: 20px 0;\">" +
+//                "      <table align=\"center\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" style=\"background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);\">" +
+//                "        <tr>" +
+//                "          <td style=\"padding: 30px; text-align: center;\">" +
+//                "            <h2 style=\"color: #333333;\">Welcome to Our Service</h2>" +
+//                "            <p style=\"color: #555555; font-size: 16px; line-height: 1.5;\">Thank you for registering. To activate your account, click the button below:</p>" +
+//                "            <a href=\"" + frontendLink + "\" style=\"display: inline-block; margin: 20px 0; padding: 14px 24px; font-size: 16px; color: #ffffff; background-color: #4CAF50; text-decoration: none; border-radius: 6px;\">Activate Account</a>" +
+//                "            <p style=\"color: #999999; font-size: 14px;\">If the button doesn't work, copy and paste the following link into your browser:</p>" +
+//                "            <p style=\"word-break: break-all; color: #4CAF50; font-size: 14px;\">" + frontendLink + "</p>" +
+//                "          </td>" +
+//                "        </tr>" +
+//                "        <tr>" +
+//                "          <td style=\"padding: 20px; text-align: center; color: #aaaaaa; font-size: 12px;\">&copy; 2025 Your Company. All rights reserved.</td>" +
+//                "        </tr>" +
+//                "      </table>" +
+//                "    </td></tr>" +
+//                "  </table>" +
 //                "</body>" +
 //                "</html>";
-        String emailBody = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head>" +
-                "  <meta charset=\"UTF-8\">" +
-                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                "</head>" +
-                "<body style=\"margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f4f4f4;\">" +
-                "  <table width=\"100%\" bgcolor=\"#f4f4f4\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
-                "    <tr><td style=\"padding: 20px 0;\">" +
-                "      <table align=\"center\" cellpadding=\"0\" cellspacing=\"0\" width=\"600\" style=\"background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);\">" +
-                "        <tr>" +
-                "          <td style=\"padding: 30px; text-align: center;\">" +
-                "            <h2 style=\"color: #333333;\">Welcome to Our Service</h2>" +
-                "            <p style=\"color: #555555; font-size: 16px; line-height: 1.5;\">Thank you for registering. To activate your account, click the button below:</p>" +
-                "            <a href=\"" + frontendLink + "\" style=\"display: inline-block; margin: 20px 0; padding: 14px 24px; font-size: 16px; color: #ffffff; background-color: #4CAF50; text-decoration: none; border-radius: 6px;\">Activate Account</a>" +
-                "            <p style=\"color: #999999; font-size: 14px;\">If the button doesn't work, copy and paste the following link into your browser:</p>" +
-                "            <p style=\"word-break: break-all; color: #4CAF50; font-size: 14px;\">" + frontendLink + "</p>" +
-                "          </td>" +
-                "        </tr>" +
-                "        <tr>" +
-                "          <td style=\"padding: 20px; text-align: center; color: #aaaaaa; font-size: 12px;\">&copy; 2025 Your Company. All rights reserved.</td>" +
-                "        </tr>" +
-                "      </table>" +
-                "    </td></tr>" +
-                "  </table>" +
-                "</body>" +
-                "</html>";
+//
+//
+//        emailService.sendEmail(email, subject, emailBody);
+//    }
 
+private void sendMailActivation(String email) {
+    String subject = "Activate Your Account";
+    String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
 
-        emailService.sendEmail(email, subject, emailBody);
-    }
+    String emailBody =
+            "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
+                    "  <tr><td align=\"center\">" +
+                    "    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border:1px solid #dddddd; border-radius:6px; font-family:Arial, sans-serif;\">" +
+                    "      <tr>" +
+                    "        <td style=\"padding: 20px; text-align: center; background-color: #f8f8f8;\">" +
+                    "          <h2 style=\"margin: 0; font-size: 20px; color: #333;\">Account Activation</h2>" +
+                    "        </td>" +
+                    "      </tr>" +
+                    "      <tr>" +
+                    "        <td style=\"padding: 20px; color: #555555; font-size: 16px;\">" +
+                    "          Hello,<br><br>" +
+                    "          Please click the button below to verify your email address and activate your account." +
+                    "        </td>" +
+                    "      </tr>" +
+                    "      <tr>" +
+                    "        <td align=\"center\" style=\"padding: 20px;\">" +
+                    "          <a href=\"" + frontendLink + "\" style=\"display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;\">" +
+                    "            Activate Account" +
+                    "          </a>" +
+                    "        </td>" +
+                    "      </tr>" +
+                    "      <tr>" +
+                    "        <td style=\"padding: 20px; font-size: 14px; color: #999999;\">" +
+                    "          If the button doesn't work, copy and paste this link into your browser:<br>" +
+                    "          <span style=\"color: #007bff; word-break: break-all;\">" + frontendLink + "</span>" +
+                    "        </td>" +
+                    "      </tr>" +
+                    "      <tr>" +
+                    "        <td style=\"padding: 20px; font-size: 12px; color: #cccccc; text-align: center;\">" +
+                    "          &copy; 2025 Your Company. All rights reserved." +
+                    "        </td>" +
+                    "      </tr>" +
+                    "    </table>" +
+                    "  </td></tr>" +
+                    "</table>";
+
+    emailService.sendEmail(email, subject, emailBody);
+}
+
 
 
     public Optional<FetchUserResponse> getUserById(Long id) {
