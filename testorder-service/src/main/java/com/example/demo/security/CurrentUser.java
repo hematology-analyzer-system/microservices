@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,4 +16,5 @@ public class CurrentUser {
     private String fullname;
     private String email;
     private String identifyNum;
+    private Set<Long> privileges;
 }

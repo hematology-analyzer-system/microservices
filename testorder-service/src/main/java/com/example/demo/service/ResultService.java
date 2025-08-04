@@ -19,12 +19,14 @@ import io.grpc.ManagedChannelBuilder;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -101,7 +103,12 @@ public class ResultService {
     public ResultResponse genDetail(Long testOrderId){
         TestOrder testOrder = testOrderRepository.findById(testOrderId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"Test Order not found"));
-
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(5L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to review result");
+        }
         if(!testOrder.getStatus().equalsIgnoreCase("PENDING")){
             throw new BadRequestException("Test Order Status must be PENDING");
         }
@@ -114,9 +121,6 @@ public class ResultService {
 
         PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
                 .setId(testOrder.getPatientTOId()).build());
-
-        CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -160,10 +164,17 @@ public class ResultService {
             Long resultId,
             List<ReviewResultRequest> reqs
     ) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(5L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to review and modify result");
+        }
         // 1. Lấy result và testOrder
         Result result = resultRepository.findById(resultId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Result not found"));
         TestOrder testOrder = result.getTestOrder();
+
 
         // 2. Chạy reviewResult trên từng detail
         List<DetailResultResponse> responses = reqs.stream()
@@ -185,8 +196,8 @@ public class ResultService {
 
         Double value = reviewResultRequest.getValue();
 
-        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-            throw new BadRequestException("Test Order Status is Not Completed");
+        if(testOrder.getStatus().equalsIgnoreCase("PENDING")){
+            throw new BadRequestException("Test Order Status is pending");
         }
 
         DetailResult d = result.getDetailResults().stream()

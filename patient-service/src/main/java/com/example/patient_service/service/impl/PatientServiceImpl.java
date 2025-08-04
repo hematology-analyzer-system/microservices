@@ -14,9 +14,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @AllArgsConstructor
 public class PatientServiceImpl implements PatientService {
@@ -37,6 +42,11 @@ public class PatientServiceImpl implements PatientService {
     public PatientRecordResponse addPatientRecord(AddPatientRequest request) {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(2L) && !userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
         Patient newPatient = Patient.builder()
                 .fullName(request.getFullName())
                 .address(request.getAddress())
@@ -81,16 +91,18 @@ public class PatientServiceImpl implements PatientService {
     public PatientRecordResponse updatePatientRecord(Integer id, UpdatePatientRequest request) {
         Patient updatedPatient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
-
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
         updatedPatient.setFullName(request.getFullName());
         updatedPatient.setAddress(request.getAddress());
         updatedPatient.setEmail(request.getEmail());
         updatedPatient.setPhone(request.getPhone());
         updatedPatient.setDateOfBirth(request.getDateOfBirth());
         updatedPatient.setGender(request.getGender());
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
-
         updatedPatient.setUpdateBy(formatlizeCreatedBy(
                 currentUser.getUserId(),
                 currentUser.getUsername(),
@@ -121,7 +133,12 @@ public class PatientServiceImpl implements PatientService {
     public PatientRecordResponse deletePatientRecord(Integer id) {
         Patient deletePatient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
-
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(4L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
         patientRepository.deleteById(id);
 
         // Sent Delete-patient-event to RabbitMQ
@@ -145,7 +162,12 @@ public class PatientServiceImpl implements PatientService {
 
         Patient newPatient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
-
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(1L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
         return PatientRecordResponse.builder()
                 .id(newPatient.getId())
                 .fullName(newPatient.getFullName())
@@ -163,6 +185,12 @@ public class PatientServiceImpl implements PatientService {
     public Page<PatientRecordResponse> allPatientRecords(
             Integer pageNo, Integer pageSize, String sortBy, String sortDir
     ) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(1L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ?
                 Sort.by(sortBy).ascending() :
@@ -193,6 +221,12 @@ public class PatientServiceImpl implements PatientService {
             int offsetPage,
             int limitOnePage
     ) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(1L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+        }
         Pageable pageable = PageRequest.of(offsetPage - 1, limitOnePage,
                 Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
