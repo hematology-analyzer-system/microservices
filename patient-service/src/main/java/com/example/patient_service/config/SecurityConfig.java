@@ -61,6 +61,11 @@ public class SecurityConfig {
                                 .requestMatchers("/auth/**").permitAll()
 //                                .requestMatchers("/auth/register").permitAll()
 //                        .requestMatchers("/public/**").permitAll() // Add any other public endpoints
+                                .requestMatchers(
+                                        "/actuator/health",
+                                        "/actuator/info"
+                                )
+                                .permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
