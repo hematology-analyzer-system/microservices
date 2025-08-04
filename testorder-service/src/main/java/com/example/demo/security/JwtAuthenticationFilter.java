@@ -16,7 +16,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -63,7 +67,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String fullname = claims.get("fullName", String.class);
             String email = String.valueOf(claims.get("email", String.class));
             String identifyNum = claims.get("identifyNum", String.class);
-
+            Object rawPrivileges = claims.get("privilege_ids");
+            Set<Long> privileges = new HashSet<>();
+            if (rawPrivileges instanceof Collection<?>) {
+                for (Object item : (Collection<?>) rawPrivileges) {
+                    if (item instanceof Number) {
+                        privileges.add(((Number) item).longValue());
+                    }
+                }
+            }
 //            List<GrantedAuthority> authorities
 //                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
@@ -72,6 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .fullname(fullname)
                     .email(email)
                     .identifyNum(identifyNum)
+                    .privileges(privileges)
                     .build();
 
             UsernamePasswordAuthenticationToken authentication
