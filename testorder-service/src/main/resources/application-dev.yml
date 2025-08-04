@@ -1,20 +1,20 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/testorder
-    username: postgres
-    password: bavui4444
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/testorder}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:bavui4444}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update # update | validate | create | create-drop
-    show-sql: true # Hi?n th? c�u SQL trong console
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true # Format SQL cho d? ??c
+        format_sql: true
 
 server:
-  port: 8082 # C� th? ??i port n?u c?n
+  port: 8082
   servlet:
     context-path: /testorder
 
