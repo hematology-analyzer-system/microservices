@@ -16,8 +16,11 @@ import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 @Service
 @AllArgsConstructor
@@ -41,9 +44,12 @@ public class CommentService {
 
         TestOrder testOrder = testOrderRepository.findById(toId)
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Test Order Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(6L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add comment");
+        }
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -67,9 +73,13 @@ public class CommentService {
 
         Result result = resultRepository.findById(resultId)
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Result Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(6L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to add comment");
+        }
+
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -95,9 +105,12 @@ public class CommentService {
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Comment Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(7L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to modify comment");
+        }
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -123,9 +136,12 @@ public class CommentService {
 
         CommentTO comment = commentTORepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Comment Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(7L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to modify comment");
+        }
 
         String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
                 , currentUser.getEmail(), currentUser.getIdentifyNum());
@@ -148,9 +164,12 @@ public class CommentService {
     public String deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Comment Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(8L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to delete comment");
+        }
 
         if (!comment.getUserId().equals(currentUser.getUserId())) {
             throw new ForbiddenActionException("User can't change this comment");
@@ -164,9 +183,12 @@ public class CommentService {
     public String deleteCommentTO(Long commentId) {
         CommentTO comment = commentTORepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Comment Not Found"));
-
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(8L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to delete comment");
+        }
 
         if (!comment.getUserId().equals(currentUser.getUserId())) {
             throw new ForbiddenActionException("User can't change this comment");

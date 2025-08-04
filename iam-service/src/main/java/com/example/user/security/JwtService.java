@@ -28,7 +28,7 @@ public class JwtService {
         claims.put("userid", user.getId());
         claims.put("fullName", user.getFullName());
         claims.put("email", user.getEmail());
-
+        claims.put("identifyNum",user.getIdentifyNum());
         Set<Long> privilegeIds = new HashSet<>();
         if (user.getRoles() != null) {
             for (Role role : user.getRoles()) {
