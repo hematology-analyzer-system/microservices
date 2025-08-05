@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -33,8 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String path = request.getServletPath();
@@ -64,12 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-
         final String token = jwt;
 
-        try{
+        try {
             Claims claims = jwtService.getClaimsFromToken(token);
-
             String username = claims.getSubject(); // sub
             Long userId = claims.get("userid", Long.class);
             String fullname = claims.get("fullName", String.class);
@@ -78,14 +75,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Object rawPrivileges = claims.get("privilege_ids");
             Set<Long> privileges = new HashSet<>();
             if (rawPrivileges instanceof Collection<?>) {
+                System.out.println("true");
                 for (Object item : (Collection<?>) rawPrivileges) {
                     if (item instanceof Number) {
                         privileges.add(((Number) item).longValue());
                     }
                 }
             }
-//            List<GrantedAuthority> authorities
-//                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            // System.out.println("privileges: " + privileges);
+            // List<GrantedAuthority> authorities
+            // = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
             CurrentUser currentUser = CurrentUser.builder()
                     .userId(userId)
@@ -95,14 +94,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .privileges(privileges)
                     .build();
 
-            UsernamePasswordAuthenticationToken authentication
-                    = new UsernamePasswordAuthenticationToken(username, null, null);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null,
+                    null);
 
             authentication.setDetails(currentUser);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        }catch (JwtException e){
+        } catch (JwtException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }

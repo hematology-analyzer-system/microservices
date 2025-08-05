@@ -1,4 +1,5 @@
 package com.example.demo.service;
+
 import com.example.demo.Client.ClientRunner;
 import com.example.demo._enum.Gender;
 import com.example.demo.config.JwtProperties;
@@ -15,6 +16,9 @@ import com.example.demo.exception.ApiException;
 import com.example.demo.service.EncryptionService;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
+import com.example.demo.rabbitmq.TestOrderRabbitMQProducer;
+import com.example.demo.messaging.testorder.event.TestOrderCreatedEvent;
+import com.example.demo.messaging.testorder.event.TestOrderUpdatedEvent;
 import com.example.grpc.patient.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -44,15 +48,20 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@EnableConfigurationProperties({JwtProperties.class})
+@EnableConfigurationProperties({ JwtProperties.class })
 public class TestOrderService {
     private final TestOrderRepository testOrderRepository;
     private final PatientServiceGrpc.PatientServiceBlockingStub stub;
     private final EncryptionService encryptionService;
-    public TestOrderService(TestOrderRepository testOrderRepository,EncryptionService encryptionService) {
+    private final TestOrderRabbitMQProducer rabbitMQProducer;
+
+    public TestOrderService(TestOrderRepository testOrderRepository,
+            EncryptionService encryptionService,
+            TestOrderRabbitMQProducer rabbitMQProducer) {
         this.testOrderRepository = testOrderRepository;
         this.stub = ClientRunner.getStub(); // lấy stub từ ClientRunner
         this.encryptionService = encryptionService;
+        this.rabbitMQProducer = rabbitMQProducer;
     }
 
     @PreDestroy
@@ -71,7 +80,7 @@ public class TestOrderService {
                 .build();
     }
 
-    public TOResponse testGrpc(Integer id){
+    public TOResponse testGrpc(Integer id) {
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("host.docker.internal", 9091)
                 .usePlaintext()
@@ -99,13 +108,13 @@ public class TestOrderService {
         List<DateTimeFormatter> formatters = List.of(
                 DateTimeFormatter.ofPattern("MM/dd/yyyy"),
                 DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        );
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         for (DateTimeFormatter fmt : formatters) {
             try {
                 return LocalDate.parse(date, fmt);
-            } catch (DateTimeParseException ignored) {}
+            } catch (DateTimeParseException ignored) {
+            }
         }
 
         throw new IllegalArgumentException("Date of Birth is invalid: " + date);
@@ -119,7 +128,7 @@ public class TestOrderService {
         List<MinimalCommentResponse> commentResponses = null;
 
         // Map Result thanh MinResultDTO
-        if(temp != null) {
+        if (temp != null) {
             resultResponses = temp.stream()
                     .map(result -> {
                         List<DetailResultResponse> detailResponses = result.getDetailResults().stream()
@@ -135,7 +144,7 @@ public class TestOrderService {
                                 }).collect(Collectors.toList());
 
                         List<MinimalCommentResponse> commentResult = result.getComment().stream()
-                                .map( detail -> {
+                                .map(detail -> {
                                     MinimalCommentResponse d = new MinimalCommentResponse();
                                     d.setId(detail.getCommentId());
                                     d.setUpdateBy(detail.getUpdateBy());
@@ -159,7 +168,7 @@ public class TestOrderService {
                     .collect(Collectors.toList());
         }
         // Map CommentTestOrder thanh DTO
-        if(comment != null) {
+        if (comment != null) {
             commentResponses = comment.stream()
                     .map(t -> {
                         MinimalCommentResponse res = new MinimalCommentResponse();
@@ -183,8 +192,7 @@ public class TestOrderService {
                         currentUser.getUserId(),
                         currentUser.getFullname(),
                         currentUser.getEmail(),
-                        currentUser.getIdentifyNum()
-                ))
+                        currentUser.getIdentifyNum()))
                 .runBy(testOrder.getRunBy())
                 .runAt(testOrder.getRunAt())
 
@@ -200,43 +208,49 @@ public class TestOrderService {
                 .build();
     }
 
-    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
+    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum) {
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
-                id, name, email, identifyNum
-        );
+                id, name, email, identifyNum);
     }
 
-    public TOResponse createTO(AddTORequest  addTORequest, Optional<Integer> id) {
+    public TOResponse createTO(AddTORequest addTORequest, Optional<Integer> id) {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(2L)&&!userPrivileges.contains(3L)) {
-            throw new AccessDeniedException("User does not have sufficient privileges to createTO");
+        // System.out.println("userPrivileges: " + userPrivileges);
+        if (!userPrivileges.contains(2L)) {
+            // String joined = userPrivileges.stream()
+            //         .map(String::valueOf)
+            //         .collect(Collectors.joining(","));
+            throw new AccessDeniedException("Access denied: Insufficient privileges.");
         }
 
-        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
-                , currentUser.getEmail(), currentUser.getIdentifyNum());
-
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname(),
+                currentUser.getEmail(), currentUser.getIdentifyNum());
 
         try {
-
+            System.out.println("log 1");
             PatientResponse response = id.map(pid -> {
                 PatientResponse originalResponse = stub.getPatientById(PatientRequest.newBuilder().setId(pid).build());
+                System.out.println("log 2");
+
                 return encryptPatientResponse(originalResponse); // Encrypt after receiving
             }).orElseGet(() -> {
-                        CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
-                                .setFullName(encryptionService.encrypt(addTORequest.getFullName()))
-                                .setEmail(encryptionService.encrypt(addTORequest.getEmail()))
-                                .setAddress(encryptionService.encrypt(addTORequest.getAddress()))
-                                .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
-                                .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber()))
-                                .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
-                                .setCreatedBy(createdByinString)
-                                .build();
+                CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
+                        .setFullName(encryptionService.encrypt(addTORequest.getFullName()))
+                        .setEmail(encryptionService.encrypt(addTORequest.getEmail()))
+                        .setAddress(encryptionService.encrypt(addTORequest.getAddress()))
+                        .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
+                        .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber()))
+                        .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
+                        .setCreatedBy(createdByinString)
+                        .build();
+                        System.out.println("log 3");
 
-                        return stub.createPatient(createPatientRequest);
-                    });
+                return stub.createPatient(createPatientRequest);
+            });
+            System.out.println("log 4");
 
             TestOrder testOrder = TestOrder.builder()
                     .createdBy(createdByinString)
@@ -245,6 +259,31 @@ public class TestOrderService {
                     .build();
 
             testOrderRepository.save(testOrder);
+            System.out.println("log 5");
+
+            // Publish TestOrder created event
+            try {
+                TestOrderCreatedEvent event = TestOrderCreatedEvent.builder()
+                        .testOrderId(testOrder.getTestId())
+                        .patientId(response.getId())
+                        .doctorId(String.valueOf(currentUser.getUserId()))
+                        .status(testOrder.getStatus())
+                        .createdAt(testOrder.getRunAt())
+                        .notes("TestOrder created")
+                        .build();
+                        System.out.println("log 6");
+
+                String correlationId = UUID.randomUUID().toString();
+                rabbitMQProducer.publishTestOrderCreated(event, correlationId);
+
+                log.info("Published TestOrder created event for testOrderId: {}", testOrder.getTestId());
+                System.out.println("log 7");
+
+            } catch (Exception e) {
+                log.error("Failed to publish TestOrder created event for testOrderId: {}, error: {}",
+                        testOrder.getTestId(), e.getMessage());
+                // Don't throw exception here to avoid rolling back the transaction
+            }
 
             return toResponse(testOrder, response);
         } catch (Exception e) {
@@ -252,10 +291,10 @@ public class TestOrderService {
         }
     }
 
-    public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO){
+    public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO) {
 
         TestOrder testOrder = testOrderRepository.findById(TO_id)
-                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
 
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
@@ -263,7 +302,6 @@ public class TestOrderService {
         if (!userPrivileges.contains(3L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to modifyTO");
         }
-
 
         try {
 
@@ -278,6 +316,32 @@ public class TestOrderService {
 
             PatientResponse modifyResponse = stub.updatePatient(request);
 
+            // Update test order status if provided in the notes or keep current status
+            String previousStatus = testOrder.getStatus();
+            // Note: UpdateTORequest doesn't have status field, so we keep current status
+            // If you need to update status, add status field to UpdateTORequest
+
+            // Publish TestOrder updated event
+            try {
+                TestOrderUpdatedEvent event = TestOrderUpdatedEvent.builder()
+                        .testOrderId(testOrder.getTestId())
+                        .patientId(testOrder.getPatientTOId())
+                        .doctorId(String.valueOf(currentUser.getUserId()))
+                        .status(testOrder.getStatus())
+                        .previousStatus(previousStatus)
+                        .updatedAt(LocalDateTime.now())
+                        .notes("TestOrder updated")
+                        .build();
+
+                String correlationId = UUID.randomUUID().toString();
+                rabbitMQProducer.publishTestOrderUpdated(event, correlationId);
+
+                log.info("Published TestOrder updated event for testOrderId: {}", testOrder.getTestId());
+            } catch (Exception e) {
+                log.error("Failed to publish TestOrder updated event for testOrderId: {}, error: {}",
+                        testOrder.getTestId(), e.getMessage());
+                // Don't throw exception here to avoid rolling back the transaction
+            }
 
             return toResponse(testOrder, modifyResponse);
         } catch (Exception e) {
@@ -285,7 +349,7 @@ public class TestOrderService {
         }
     }
 
-    public void deteleTestOrder(Long TO_id){
+    public void deteleTestOrder(Long TO_id) {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
@@ -301,11 +365,8 @@ public class TestOrderService {
             int size,
             String sortBy,
             String direction,
-            String keyword
-    ){
-        Sort sort = direction.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() :
-                Sort.by(sortBy).ascending();
+            String keyword) {
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -317,8 +378,7 @@ public class TestOrderService {
         } else {
 
             SearchPatientResponseGRPC patientResponseGRPC = stub.searchPatient(
-                    SearchPatientRequestGRPC.newBuilder().setKeyword(keyword).build()
-            );
+                    SearchPatientRequestGRPC.newBuilder().setKeyword(keyword).build());
 
             List<Integer> patientIds = patientResponseGRPC.getPatientsList().stream()
                     .map(PatientResponse::getId)
@@ -331,22 +391,21 @@ public class TestOrderService {
             }
         }
 
-            // Gọi gRPC cho từng testOrder
-            testorderResponses = testOrderPage.getContent().stream()
-                    .map(testOrder -> {
-                        try {
-                            PatientResponse patient = stub.getPatientById(
-                                    PatientRequest.newBuilder().setId(testOrder.getPatientTOId()).build()
-                            );
-                            return toResponse(testOrder, patient);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to get patient via gRPC for TestOrder id = " + testOrder.getTestId(), e);
-                        }
-                    })
-                    .toList();
+        // Gọi gRPC cho từng testOrder
+        testorderResponses = testOrderPage.getContent().stream()
+                .map(testOrder -> {
+                    try {
+                        PatientResponse patient = stub.getPatientById(
+                                PatientRequest.newBuilder().setId(testOrder.getPatientTOId()).build());
+                        return toResponse(testOrder, patient);
+                    } catch (Exception e) {
+                        throw new RuntimeException(
+                                "Failed to get patient via gRPC for TestOrder id = " + testOrder.getTestId(), e);
+                    }
+                })
+                .toList();
 
-
-        if(testorderResponses.isEmpty()){
+        if (testorderResponses.isEmpty()) {
             return PageTOResponse.empty(page, size, sortBy, direction);
         }
 
@@ -356,23 +415,20 @@ public class TestOrderService {
                 page,
                 size,
                 sortBy,
-                direction
-        );
+                direction);
     }
 
-    public Page<SearchDTO> getFilterTO (
-        String searchText,
-        Map<String, Object> filter,
-        String sortBy,
-        String direction,
-        int offSetPage,
-        int limitOnePage
-    ){
+    public Page<SearchDTO> getFilterTO(
+            String searchText,
+            Map<String, Object> filter,
+            String sortBy,
+            String direction,
+            int offSetPage,
+            int limitOnePage) {
         Pageable pageable = PageRequest.of(offSetPage - 1, limitOnePage,
                 Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
         Specification<TestOrder> spec = ((root, query, criteriaBuilder) -> criteriaBuilder.conjunction());
-
 
         List<Integer> tempPatientIds = new ArrayList<>();
         SearchPatientResponseGRPC cachedResponse = null;
@@ -387,8 +443,7 @@ public class TestOrderService {
         if (searchText != null && !searchText.isEmpty()) {
             // TIM CAC PATIENT THOA DIEU KIEN SEARCH
             SearchPatientResponseGRPC patientResponseGRPC = stub.searchPatient(
-                    SearchPatientRequestGRPC.newBuilder().setKeyword(searchText).build()
-            );
+                    SearchPatientRequestGRPC.newBuilder().setKeyword(searchText).build());
 
             cachedResponse = patientResponseGRPC;
 
@@ -408,10 +463,9 @@ public class TestOrderService {
             });
         }
 
-
         // FILTER
         if (filter != null && !filter.isEmpty()) {
-            if(filter.containsKey("fromDate")){
+            if (filter.containsKey("fromDate")) {
                 LocalDateTime fromDate;
                 try {
                     // Handle both LocalDateTime string and date string formats
@@ -424,15 +478,14 @@ public class TestOrderService {
                         fromDate = LocalDate.parse(fromDateStr).atStartOfDay();
                     }
 
-                    spec = spec.and((root, query, cb) ->
-                            cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
+                    spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("runAt"), fromDate));
                 } catch (Exception e) {
                     // Log error but continue without this filter
                     System.err.println("Error parsing fromDate: " + filter.get("fromDate"));
                 }
             }
 
-            if(filter.containsKey("toDate")){
+            if (filter.containsKey("toDate")) {
                 LocalDateTime toDate;
                 try {
                     // Handle both LocalDateTime string and date string formats
@@ -445,8 +498,7 @@ public class TestOrderService {
                         toDate = LocalDate.parse(toDateStr).atTime(23, 59, 59);
                     }
 
-                    spec = spec.and((root, query, cb) ->
-                            cb.lessThanOrEqualTo(root.get("runAt"), toDate));
+                    spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("runAt"), toDate));
                 } catch (Exception e) {
                     // Log error but continue without this filter
                     System.err.println("Error parsing toDate: " + filter.get("toDate"));
@@ -456,7 +508,8 @@ public class TestOrderService {
 
         Page<TestOrder> testOrders = testOrderRepository.findAll(spec, pageable);
 
-        if (testOrders.isEmpty()) return Page.empty(pageable);
+        if (testOrders.isEmpty())
+            return Page.empty(pageable);
 
         Map<Integer, PatientResponse> patientMap;
 
@@ -472,8 +525,7 @@ public class TestOrderService {
                 patientMap = Map.of(); // empty map
             } else {
                 PatientListResponse patientListResponse = stub.getPatientsByIds(
-                        PatientIdsRequest.newBuilder().addAllIds(allPatientIds).build()
-                );
+                        PatientIdsRequest.newBuilder().addAllIds(allPatientIds).build());
 
                 patientMap = patientListResponse.getPatientsList().stream()
                         .collect(Collectors.toMap(PatientResponse::getId, Function.identity()));
@@ -504,23 +556,22 @@ public class TestOrderService {
         });
     }
 
-    public TOResponse viewDetail(Long id){
+    public TOResponse viewDetail(Long id) {
         TestOrder testOrder = testOrderRepository.findById(id)
-                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(1L)&&!userPrivileges.contains(5L)) {
+        if (!userPrivileges.contains(1L) && !userPrivileges.contains(5L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to view detail TO");
         }
-//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-//            throw new BadRequestException("Test Order Status is Not Completed");
-//        }
-//
-//        if(testOrder.getResults().isEmpty()){
-//            throw new BadRequestException("Test Order Results is empty!");
-//        }
-
+        // if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+        // throw new BadRequestException("Test Order Status is Not Completed");
+        // }
+        //
+        // if(testOrder.getResults().isEmpty()){
+        // throw new BadRequestException("Test Order Results is empty!");
+        // }
 
         PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
                 .setId(testOrder.getPatientTOId()).build());
