@@ -26,7 +26,7 @@ public class SchedulerConfig {
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
 
-    private static final long TEN_MINUTES_IN_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
+    private static final long TEN_MINUTES_IN_MS = 10 * 1 * 1000; // 10 minutes in milliseconds
 
     // This method will run every 1 minute
     @Scheduled(fixedRate = 60000) // Run every 60 seconds (1 minute)
