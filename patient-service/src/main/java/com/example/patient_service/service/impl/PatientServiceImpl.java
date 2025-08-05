@@ -7,6 +7,7 @@ import com.example.patient_service.model.Patient;
 import com.example.patient_service.rabbitmq.PatientRabbitMQProducer;
 import com.example.patient_service.repository.PatientRepository;
 import com.example.patient_service.security.CurrentUser;
+import com.example.patient_service.service.EncryptionService;
 import com.example.patient_service.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,12 +31,36 @@ public class PatientServiceImpl implements PatientService {
 
     // Attribute represents RabbitMQ producer to send event to Correct queues
     private final PatientRabbitMQProducer patientRabbitMQProducer;
+    private final EncryptionService encryptionService;
 
     private String formatlizeCreatedBy(Long id, String name, String email, String identifyNum) {
         return String.format(
                 "ID: %d | Name: %s | Email: %s | IdNum: %s",
                 id, name, email, identifyNum
         );
+    }
+
+    private Patient encryptPatientData(Patient patient) {
+        patient.setFullName(encryptionService.encrypt(patient.getFullName()));
+        patient.setAddress(encryptionService.encrypt(patient.getAddress()));
+        patient.setEmail(encryptionService.encrypt(patient.getEmail()));
+        patient.setPhone(encryptionService.encrypt(patient.getPhone()));
+        return patient;
+    }
+
+    // Helper method to decrypt patient data for response
+    private PatientRecordResponse decryptPatientResponse(Patient patient) {
+        return PatientRecordResponse.builder()
+                .id(patient.getId())
+                .fullName(encryptionService.decrypt(patient.getFullName()))
+                .address(encryptionService.decrypt(patient.getAddress()))
+                .email(encryptionService.decrypt(patient.getEmail()))
+                .phone(encryptionService.decrypt(patient.getPhone()))
+                .dateOfBirth(patient.getDateOfBirth()) // Date is not encrypted
+                .gender(patient.getGender()) // Gender is not encrypted
+                .createdAt(patient.getCreatedAt())
+                .updatedAt(patient.getUpdatedAt())
+                .build();
     }
 
     @Override
@@ -68,23 +93,13 @@ public class PatientServiceImpl implements PatientService {
                 ))
                 .build();
 
-
+        encryptPatientData(newPatient);
         patientRepository.save(newPatient);
 
         // Send Add-patient-event to RabbitMQ
         patientRabbitMQProducer.sendAddPatientEvent(newPatient);
 
-        return PatientRecordResponse.builder()
-                .id(newPatient.getId())
-                .fullName(newPatient.getFullName())
-                .address(newPatient.getAddress())
-                .email(newPatient.getEmail())
-                .phone(newPatient.getPhone())
-                .dateOfBirth(newPatient.getDateOfBirth())
-                .gender(newPatient.getGender())
-                .createdAt(newPatient.getCreatedAt())
-                .updatedAt(newPatient.getUpdatedAt())
-                .build();
+        return decryptPatientResponse(newPatient);
     }
 
     @Override
@@ -97,10 +112,10 @@ public class PatientServiceImpl implements PatientService {
         if (!userPrivileges.contains(3L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
         }
-        updatedPatient.setFullName(request.getFullName());
-        updatedPatient.setAddress(request.getAddress());
-        updatedPatient.setEmail(request.getEmail());
-        updatedPatient.setPhone(request.getPhone());
+        updatedPatient.setFullName(encryptionService.encrypt(request.getFullName()));
+        updatedPatient.setAddress(encryptionService.encrypt(request.getAddress()));
+        updatedPatient.setEmail(encryptionService.encrypt(request.getEmail()));
+        updatedPatient.setPhone(encryptionService.encrypt(request.getPhone()));
         updatedPatient.setDateOfBirth(request.getDateOfBirth());
         updatedPatient.setGender(request.getGender());
         updatedPatient.setUpdateBy(formatlizeCreatedBy(
@@ -116,17 +131,7 @@ public class PatientServiceImpl implements PatientService {
         // Send Update-patient-event to RabbitMQ
         patientRabbitMQProducer.sendUpdatePatientEvent(updatedPatient);
 
-        return PatientRecordResponse.builder()
-                .id(updatedPatient.getId())
-                .fullName(updatedPatient.getFullName())
-                .address(updatedPatient.getAddress())
-                .email(updatedPatient.getEmail())
-                .phone(updatedPatient.getPhone())
-                .dateOfBirth(updatedPatient.getDateOfBirth())
-                .gender(updatedPatient.getGender())
-                .createdAt(updatedPatient.getCreatedAt())
-                .updatedAt(updatedPatient.getUpdatedAt())
-                .build();
+        return decryptPatientResponse(updatedPatient);
     }
 
     @Override
@@ -144,23 +149,13 @@ public class PatientServiceImpl implements PatientService {
         // Sent Delete-patient-event to RabbitMQ
         patientRabbitMQProducer.sendDeletePatientEvent(deletePatient);
 
-        return PatientRecordResponse.builder()
-                .id(deletePatient.getId())
-                .fullName(deletePatient.getFullName())
-                .address(deletePatient.getAddress())
-                .email(deletePatient.getEmail())
-                .phone(deletePatient.getPhone())
-                .dateOfBirth(deletePatient.getDateOfBirth())
-                .gender(deletePatient.getGender())
-                .createdAt(deletePatient.getCreatedAt())
-                .updatedAt(deletePatient.getUpdatedAt())
-                .build();
+        return decryptPatientResponse(deletePatient);
     }
 
     @Override
     public PatientRecordResponse getPatientRecord(Integer id) {
 
-        Patient newPatient = patientRepository.findById(id)
+        Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
@@ -168,17 +163,7 @@ public class PatientServiceImpl implements PatientService {
         if (!userPrivileges.contains(1L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
         }
-        return PatientRecordResponse.builder()
-                .id(newPatient.getId())
-                .fullName(newPatient.getFullName())
-                .address(newPatient.getAddress())
-                .email(newPatient.getEmail())
-                .phone(newPatient.getPhone())
-                .dateOfBirth(newPatient.getDateOfBirth())
-                .gender(newPatient.getGender())
-                .createdAt(newPatient.getCreatedAt())
-                .updatedAt(newPatient.getUpdatedAt())
-                .build();
+        return decryptPatientResponse(patient);
     }
 
     @Override
@@ -200,18 +185,8 @@ public class PatientServiceImpl implements PatientService {
 
         Page<Patient> patientPage = patientRepository.findAll(pageable);
 
-        return patientPage.map(patient -> PatientRecordResponse.builder()
-                .id(patient.getId())
-                .fullName(patient.getFullName())
-                .address(patient.getAddress())
-                .email(patient.getEmail())
-                .phone(patient.getPhone())
-                .dateOfBirth(patient.getDateOfBirth())
-                .gender(patient.getGender())
-                .createdAt(patient.getCreatedAt())
-                .updatedAt(patient.getUpdatedAt())
-                .build()
-        );
+        return patientPage.map(this::decryptPatientResponse);
+
     }
 
     public Page<PatientRecordResponse> getFilteredPatients(
@@ -243,16 +218,6 @@ public class PatientServiceImpl implements PatientService {
 
         Page<Patient> patients = patientRepository.findAll(spec, pageable);
 
-        return patients.map(patient -> PatientRecordResponse.builder()
-                .id(patient.getId())
-                .fullName(patient.getFullName())
-                .address(patient.getAddress())
-                .gender(patient.getGender())
-                .dateOfBirth(patient.getDateOfBirth())
-                .phone(patient.getPhone())
-                .email(patient.getEmail())
-                .createdAt(patient.getCreatedAt())
-                .updatedAt(patient.getUpdatedAt())
-                .build());
+        return patients.map(this::decryptPatientResponse);
     }
 }
