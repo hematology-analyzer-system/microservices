@@ -52,3 +52,7 @@ jwt:
 logging:
   level:
     org.springframework.grpc: DEBUG
+
+app:
+  encryption:
+    secret-key: mySecretEncryptionKey16Chars

@@ -12,8 +12,7 @@ import com.example.demo.dto.TestOrder.UpdateTORequest;
 import com.example.demo.dto.search.SearchDTO;
 import com.example.demo.entity.*;
 import com.example.demo.exception.ApiException;
-import com.example.demo.exception.BadRequestException;
-//import com.example.demo.repository.PatientRepository;
+import com.example.demo.service.EncryptionService;
 import com.example.demo.repository.TestOrderRepository;
 import com.example.demo.security.CurrentUser;
 import com.example.grpc.patient.*;
@@ -49,10 +48,11 @@ import lombok.extern.slf4j.Slf4j;
 public class TestOrderService {
     private final TestOrderRepository testOrderRepository;
     private final PatientServiceGrpc.PatientServiceBlockingStub stub;
-
-    public TestOrderService(TestOrderRepository testOrderRepository) {
+    private final EncryptionService encryptionService;
+    public TestOrderService(TestOrderRepository testOrderRepository,EncryptionService encryptionService) {
         this.testOrderRepository = testOrderRepository;
         this.stub = ClientRunner.getStub(); // lấy stub từ ClientRunner
+        this.encryptionService = encryptionService;
     }
 
     @PreDestroy
@@ -60,7 +60,16 @@ public class TestOrderService {
         ClientRunner.shutdown();
     }
 
-
+    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
+        return PatientResponse.newBuilder()
+                .setId(originalResponse.getId())
+                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
+                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
+                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
+                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
+                .setGender(originalResponse.getGender()) // Don't encrypt gender
+                .build();
+    }
 
     public TOResponse testGrpc(Integer id){
         ManagedChannel channel = ManagedChannelBuilder
@@ -183,11 +192,11 @@ public class TestOrderService {
 
                 .comments(commentResponses)
 
-                .fullName(patientResponse.getFullName())
-                .address(patientResponse.getAddress())
+                .fullName(encryptionService.decrypt(patientResponse.getFullName())) // Use decrypted data
+                .address(encryptionService.decrypt(patientResponse.getAddress()))
                 .gender(patientResponse.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE)
                 .dateOfBirth(safeParseDate(patientResponse.getDateOfBirth()))
-                .phone(patientResponse.getPhone())
+                .phone(encryptionService.decrypt(patientResponse.getPhone()))
                 .build();
     }
 
@@ -212,14 +221,16 @@ public class TestOrderService {
 
         try {
 
-            PatientResponse response = id.map(pid -> stub.getPatientById(PatientRequest.newBuilder().setId(pid).build()))
-                    .orElseGet(() -> {
+            PatientResponse response = id.map(pid -> {
+                PatientResponse originalResponse = stub.getPatientById(PatientRequest.newBuilder().setId(pid).build());
+                return encryptPatientResponse(originalResponse); // Encrypt after receiving
+            }).orElseGet(() -> {
                         CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
-                                .setFullName(addTORequest.getFullName())
-                                .setEmail(addTORequest.getEmail())
-                                .setAddress(addTORequest.getAddress())
+                                .setFullName(encryptionService.encrypt(addTORequest.getFullName()))
+                                .setEmail(encryptionService.encrypt(addTORequest.getEmail()))
+                                .setAddress(encryptionService.encrypt(addTORequest.getAddress()))
                                 .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
-                                .setPhone(addTORequest.getPhoneNumber())
+                                .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber()))
                                 .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
                                 .setCreatedBy(createdByinString)
                                 .build();
@@ -476,10 +487,10 @@ public class TestOrderService {
             PatientResponse patient = patientMap.get(tOrder.getPatientTOId());
 
             if (patient != null) {
-                searchDTO.setFullName(patient.getFullName());
+                searchDTO.setFullName(encryptionService.decrypt(patient.getFullName()));
                 searchDTO.setAge(Period.between(LocalDate.parse(patient.getDateOfBirth()), LocalDate.now()).getYears());
                 searchDTO.setGender(patient.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE);
-                searchDTO.setPhone(patient.getPhone());
+                searchDTO.setPhone(encryptionService.decrypt(patient.getPhone()));
             } else {
                 searchDTO.setFullName("Unknown");
             }

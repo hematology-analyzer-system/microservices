@@ -29,3 +29,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+app:
+  encryption:
+    secret-key: mySecretEncryptionKey16Chars
