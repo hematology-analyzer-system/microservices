@@ -56,3 +56,10 @@ logging:
     root: ${LOGGING_LEVEL_ROOT:WARN}
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+
+mailtrap:
+  api:
+    token: API_KEY_MAIL   # Get this from Mailtrap > Email Sending > API Tokens
+  sender:
+    email: no-reply@khoa.email       # Must be a verified sender in Mailtrap
+    name: "Healthcare Group 2"            # Display name in the recipient's inbox
