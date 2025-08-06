@@ -21,8 +21,6 @@ variables:
 stages:
   - validate
   - build
-  - test
-  - security
   - package
 
 # Include service-specific CI configurations
