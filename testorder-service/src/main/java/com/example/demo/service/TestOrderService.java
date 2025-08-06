@@ -61,16 +61,16 @@ public class TestOrderService {
         ClientRunner.shutdown();
     }
 
-    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
-        return PatientResponse.newBuilder()
-                .setId(originalResponse.getId())
-                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
-                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
-                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
-                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
-                .setGender(originalResponse.getGender()) // Don't encrypt gender
-                .build();
-    }
+//    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
+//        return PatientResponse.newBuilder()
+//                .setId(originalResponse.getId())
+//                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
+//                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
+//                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
+//                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
+//                .setGender(originalResponse.getGender()) // Don't encrypt gender
+//                .build();
+//    }
 
 //    private CreatePatientRequest decryptPatientResponse(CreatePatientRequest patient) {
 //        return CreatePatientRequest.builder()
@@ -236,20 +236,23 @@ public class TestOrderService {
 
             PatientResponse response = id.map(pid -> {
                 PatientResponse originalResponse = stub.getPatientById(PatientRequest.newBuilder().setId(pid).build());
-                return encryptPatientResponse(originalResponse); // Encrypt after receiving
-            }).orElseGet(() -> {
-                        CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
-                                .setFullName(addTORequest.getFullName())
-                                .setEmail(addTORequest.getEmail())
-                                .setAddress(addTORequest.getAddress())
-                                .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
-                                .setPhone(addTORequest.getPhoneNumber())
-                                .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
-                                .setCreatedBy(createdByinString)
-                                .build();
 
-                        return stub.createPatient(createPatientRequest);
-                    });
+                return originalResponse; // Data is already encrypted
+
+            }).orElseGet(() -> {
+                // NEW PATIENT: ENCRYPT data before sending to gRPC
+                CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
+                        .setFullName(encryptionService.encrypt(addTORequest.getFullName())) // ENCRYPT HERE
+                        .setEmail(encryptionService.encrypt(addTORequest.getEmail()))       // ENCRYPT HERE
+                        .setAddress(encryptionService.encrypt(addTORequest.getAddress()))   // ENCRYPT HERE
+                        .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
+                        .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber())) // ENCRYPT HERE
+                        .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
+                        .setCreatedBy(createdByinString)
+                        .build();
+
+                return stub.createPatient(createPatientRequest);
+            });
 
             TestOrder testOrder = TestOrder.builder()
                     .createdBy(createdByinString)
