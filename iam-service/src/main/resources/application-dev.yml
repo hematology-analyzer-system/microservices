@@ -52,3 +52,10 @@ logging:
     your:
       package:
         name: DEBUG
+
+mailtrap:
+  api:
+    token: ${MAILTRAP_API_TOKEN}
+  sender:
+    email: ${MAILTRAP_SENDER_EMAIL}
+    name: ${MAILTRAP_SENDER_NAME}

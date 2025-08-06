@@ -59,7 +59,7 @@ logging:
 
 mailtrap:
   api:
-    token: API_KEY_MAIL   # Get this from Mailtrap > Email Sending > API Tokens
+    token: ${MAILTRAP_API_TOKEN}
   sender:
-    email: no-reply@khoa.email       # Must be a verified sender in Mailtrap
-    name: "Healthcare Group 2"            # Display name in the recipient's inbox
+    email: ${MAILTRAP_SENDER_EMAIL}
+    name: ${MAILTRAP_SENDER_NAME}
