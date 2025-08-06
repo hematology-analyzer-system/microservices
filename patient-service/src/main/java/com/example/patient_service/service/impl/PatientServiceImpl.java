@@ -10,16 +10,17 @@ import com.example.patient_service.security.CurrentUser;
 import com.example.patient_service.service.EncryptionService;
 import com.example.patient_service.service.PatientService;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -202,22 +203,69 @@ public class PatientServiceImpl implements PatientService {
         if (!userPrivileges.contains(1L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
         }
-        Pageable pageable = PageRequest.of(offsetPage - 1, limitOnePage,
-                Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
 
-        Specification<Patient> spec = (root, query, cb) -> cb.conjunction();
-
-        if (searchText != null && !searchText.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("fullName")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("email")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("phone")), "%" + searchText.toLowerCase() + "%"),
-                    cb.like(cb.lower(root.get("address")), "%" + searchText.toLowerCase() + "%")
-            ));
+        // If no search text, use original database query
+        if (searchText == null || searchText.isEmpty()) {
+            Pageable pageable = PageRequest.of(offsetPage - 1, limitOnePage,
+                    Sort.by(direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy));
+            Page<Patient> patients = patientRepository.findAll(pageable);
+            return patients.map(this::decryptPatientResponse);
         }
 
-        Page<Patient> patients = patientRepository.findAll(spec, pageable);
+        // For search: fetch all patients, decrypt, then filter
+        List<Patient> allPatients = patientRepository.findAll();
 
-        return patients.map(this::decryptPatientResponse);
+        // Decrypt and filter
+        List<PatientRecordResponse> filteredPatients = allPatients.stream()
+                .map(this::decryptPatientResponse)
+                .filter(patient -> matchesSearchCriteria(patient, searchText))
+                .collect(Collectors.toList());
+
+        // Sort manually
+        sortPatients(filteredPatients, sortBy, direction);
+
+        // Manual pagination
+        int start = (offsetPage - 1) * limitOnePage;
+        int end = Math.min(start + limitOnePage, filteredPatients.size());
+        List<PatientRecordResponse> paginatedResults = filteredPatients.subList(start, end);
+
+        return new PageImpl<>(paginatedResults,
+                PageRequest.of(offsetPage - 1, limitOnePage),
+                filteredPatients.size());
+    }
+
+    private boolean matchesSearchCriteria(PatientRecordResponse patient, String searchText) {
+        String lowerSearchText = searchText.toLowerCase();
+        return (patient.getFullName() != null && patient.getFullName().toLowerCase().contains(lowerSearchText)) ||
+                (patient.getEmail() != null && patient.getEmail().toLowerCase().contains(lowerSearchText)) ||
+                (patient.getPhone() != null && patient.getPhone().toLowerCase().contains(lowerSearchText)) ||
+                (patient.getAddress() != null && patient.getAddress().toLowerCase().contains(lowerSearchText));
+    }
+
+    private void sortPatients(List<PatientRecordResponse> patients, String sortBy, String direction) {
+        Comparator<PatientRecordResponse> comparator = getComparator(sortBy);
+        if ("desc".equalsIgnoreCase(direction)) {
+            comparator = comparator.reversed();
+        }
+        patients.sort(comparator);
+    }
+
+    private Comparator<PatientRecordResponse> getComparator(String sortBy) {
+        switch (sortBy.toLowerCase()) {
+            case "fullname":
+                return Comparator.comparing(PatientRecordResponse::getFullName,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "email":
+                return Comparator.comparing(PatientRecordResponse::getEmail,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "phone":
+                return Comparator.comparing(PatientRecordResponse::getPhone,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "address":
+                return Comparator.comparing(PatientRecordResponse::getAddress,
+                        Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            default:
+                return Comparator.comparing(PatientRecordResponse::getId);
+        }
     }
 }

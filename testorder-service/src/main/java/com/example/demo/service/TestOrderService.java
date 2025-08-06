@@ -4,6 +4,7 @@ import com.example.demo._enum.Gender;
 import com.example.demo.config.JwtProperties;
 import com.example.demo.dto.Comment.MinimalCommentResponse;
 import com.example.demo.dto.DetailResult.DetailResultResponse;
+import com.example.demo.dto.PatientRecordResponse;
 import com.example.demo.dto.Result.MinimalResultResponse;
 import com.example.demo.dto.TestOrder.AddTORequest;
 import com.example.demo.dto.TestOrder.PageTOResponse;
@@ -70,6 +71,18 @@ public class TestOrderService {
                 .setGender(originalResponse.getGender()) // Don't encrypt gender
                 .build();
     }
+
+//    private CreatePatientRequest decryptPatientResponse(CreatePatientRequest patient) {
+//        return CreatePatientRequest.builder()
+////                .id(patient.getId())
+//                .fullName(encryptionService.decrypt(patient.getFullName()))
+//                .address(encryptionService.decrypt(patient.getAddress()))
+//                .email(encryptionService.decrypt(patient.getEmail()))
+//                .phone(encryptionService.decrypt(patient.getPhone()))
+//                .dateOfBirth(patient.getDateOfBirth()) // Date is not encrypted
+//                .gender(patient.getGender()) // Gender is not encrypted
+//                .build();
+//    }
 
     public TOResponse testGrpc(Integer id){
         ManagedChannel channel = ManagedChannelBuilder
@@ -226,11 +239,11 @@ public class TestOrderService {
                 return encryptPatientResponse(originalResponse); // Encrypt after receiving
             }).orElseGet(() -> {
                         CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
-                                .setFullName(encryptionService.encrypt(addTORequest.getFullName()))
-                                .setEmail(encryptionService.encrypt(addTORequest.getEmail()))
-                                .setAddress(encryptionService.encrypt(addTORequest.getAddress()))
+                                .setFullName(addTORequest.getFullName())
+                                .setEmail(addTORequest.getEmail())
+                                .setAddress(addTORequest.getAddress())
                                 .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
-                                .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber()))
+                                .setPhone(addTORequest.getPhoneNumber())
                                 .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
                                 .setCreatedBy(createdByinString)
                                 .build();
@@ -251,6 +264,8 @@ public class TestOrderService {
             throw new RuntimeException("gRPC call failed aduni: " + e.getMessage(), e);
         }
     }
+
+
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO){
 
