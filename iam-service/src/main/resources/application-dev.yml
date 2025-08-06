@@ -55,7 +55,7 @@ logging:
 
 mailtrap:
   api:
-    token: ${MAILTRAP_API_TOKEN}
+    token: ${MAILTRAP_API_TOKEN:dummy_value}
   sender:
-    email: ${MAILTRAP_SENDER_EMAIL}
-    name: ${MAILTRAP_SENDER_NAME}
+    email: ${MAILTRAP_SENDER_EMAIL:dummy_email}
+    name: ${MAILTRAP_SENDER_NAME:dummy_name}

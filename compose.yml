@@ -85,6 +85,8 @@ services:
       SPRING_RABBITMQ_PASSWORD: guest
       # MongoDB
       SPRING_DATA_MONGODB_URI: mongodb://admin:bavui4444@mongodb:27017/microservices?authSource=admin
+      # Dummy Mailtrap token
+      MAILTRAP_API_TOKEN: dummy_token
     ports:
       - "127.0.0.1:8080:8080"
       - "127.0.0.1:9090:9090"
