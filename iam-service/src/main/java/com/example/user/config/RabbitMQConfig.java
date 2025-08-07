@@ -1,6 +1,6 @@
 package com.example.user.config;
 
-import lombok.Data;
+// import lombok.Data;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -337,7 +337,22 @@ public class RabbitMQConfig {
     public Binding userChangePasswordBinding(@Qualifier("userChangePasswordQueue") Queue userChangePasswordQueue, TopicExchange appExchange) {
         return BindingBuilder.bind(userChangePasswordQueue).to(appExchange).with("user.changePassword");
     }
-
+    @Bean
+    public Queue userLockQueue() {
+        return new Queue("userLockQueue", true); // Durable queue for locking a user
+    }
+    @Bean
+    public Binding userLockBinding(@Qualifier("userLockQueue") Queue userLockQueue, TopicExchange appExchange) {
+        return BindingBuilder.bind(userLockQueue).to(appExchange).with("user.lock");
+    }
+    @Bean
+    public Queue userUnlockQueue() {
+        return new Queue("userUnlockQueue", true); // Durable queue for unlocking a user
+    }
+    @Bean
+    public Binding userUnlockBinding(@Qualifier("userUnlockQueue") Queue userUnlockQueue, TopicExchange appExchange) {
+        return BindingBuilder.bind(userUnlockQueue).to(appExchange).with("user.unlock");
+    }
 
 
 }

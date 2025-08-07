@@ -4,9 +4,9 @@
 # Workflow rules - only run on MR to develop/main and direct pushes to develop/main
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-      when: always
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+    # - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    #   when: always
+    - if: $CI_COMMIT_BRANCH == "main" # || $CI_COMMIT_BRANCH == "develop"
       when: always
     - when: never
 

@@ -63,6 +63,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String token = jwt;
 
+        if (jwt == null || jwt.trim().isEmpty()) {
+            log.warn("No JWT found in request.");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
         try{
             Claims claims = jwtService.getClaimsFromToken(token);
 
