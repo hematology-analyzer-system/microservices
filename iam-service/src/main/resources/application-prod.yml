@@ -17,6 +17,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
+<<<<<<< HEAD
   mail:
     host: ${SPRING_MAIL_HOST}
     port: ${SPRING_MAIL_PORT}
@@ -35,6 +36,8 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+=======
+>>>>>>> develop
   grpc:
     server:
       port: 9090
@@ -74,3 +77,10 @@ logging:
     root: ${LOGGING_LEVEL_ROOT:WARN}
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+
+mailtrap:
+  api:
+    token: ${MAILTRAP_API_TOKEN}
+  sender:
+    email: ${MAILTRAP_SENDER_EMAIL}
+    name: ${MAILTRAP_SENDER_NAME}

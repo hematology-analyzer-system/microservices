@@ -1,22 +1,24 @@
 # Test Orders Service CI/CD Pipeline
 .testorder-service-changes: &testorder-service-changes
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
       changes:
-        - pom.xml
-        - src/**/*
-        - .gitlab-ci.yml
+        - testorder-service/pom.xml
+        - testorder-service/src/**/*
+        - testorder-service/.gitlab-ci.yml
+        - testorder-service/Dockerfile
       when: always
     - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main")
       changes:
         - testorder-service/pom.xml
         - testorder-service/src/**/*
         - testorder-service/.gitlab-ci.yml
+        - testorder-service/Dockerfile
       when: always
     - when: never
 
-# Build Test Orders Service using Dockerfile
-build-testorder-service:
+# Build and Package Test Orders Service 
+build-and-package-testorder-service:
   <<: *testorder-service-changes
   stage: build
   image: docker:20.10.16
@@ -28,21 +30,21 @@ build-testorder-service:
   before_script:
     - cd testorder-service
     - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script: |
-    echo "Building Test Orders Service using Dockerfile..."
-    export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
-    echo "Build tag - $BUILD_TAG"
-    echo "Building multi-stage Dockerfile build stage only for artifacts"
-    docker build --target build -t testorder-service-build:$BUILD_TAG .
-    echo "Extracting built JAR for artifacts"
-    docker create --name temp-container testorder-service-build:$BUILD_TAG
-    docker cp temp-container:/app/target/ ./
-    docker rm temp-container
-    echo "Test Orders Service build completed"
-  artifacts:
-    paths:
-      - testorder-service/target/
-    expire_in: 1 hour
+    echo "Building and pushing Test Orders Service Docker image..."
+    export DATETIME=$(date +%Y%m%d-%H%M%S)
+    echo "Building with timestamp - $DATETIME"
+    echo "Building complete Docker image using your Dockerfile"
+    docker build -t $REGISTRY/testorder-service:$DATETIME .
+    docker build -t $REGISTRY/testorder-service:latest .
+    echo "Pushing Docker images..."
+    docker push $REGISTRY/testorder-service:$DATETIME
+    docker push $REGISTRY/testorder-service:latest
+    echo "Test Orders Service Docker image built and pushed successfully"
+    echo "Available images:"
+    echo "  - $REGISTRY/testorder-service:$DATETIME"
+    echo "  - $REGISTRY/testorder-service:latest"
   cache:
     key: testorder-docker-$CI_COMMIT_REF_SLUG
     paths:
@@ -83,33 +85,3 @@ build-testorder-service:
 #     - build-testorder-service
 #   when: manual # Make tests optional until they are written
 #   allow_failure: true # Don't block pipeline if tests fail
-
-# Package Test Orders Service - Full Docker Build
-package-testorder-service:
-  <<: *testorder-service-changes
-  stage: package
-  image: docker:20.10.16
-  services:
-    - docker:20.10.16-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-  before_script:
-    - cd testorder-service
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script: |
-    echo "Building and pushing Test Orders Service Docker image..."
-    export DATETIME=$(date +%Y%m%d-%H%M%S)
-    echo "Building with timestamp - $DATETIME"
-    echo "Building complete Docker image using your Dockerfile"
-    docker build -t $REGISTRY/testorder-service:$DATETIME .
-    docker build -t $REGISTRY/testorder-service:latest .
-    echo "Pushing Docker images..."
-    docker push $REGISTRY/testorder-service:$DATETIME
-    docker push $REGISTRY/testorder-service:latest
-    echo "Test Orders Service Docker image pushed successfully"
-    echo "Available images:"
-    echo "  - $REGISTRY/testorder-service:$DATETIME"
-    echo "  - $REGISTRY/testorder-service:latest"
-  dependencies:
-    - build-testorder-service # Ensure build completed first

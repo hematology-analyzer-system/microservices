@@ -36,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // Skip token parsing on public endpoints
-        if (path.startsWith("/auth") || path.startsWith("/actuator")) {
+        if (path.startsWith("/patient/auth") || path.startsWith("/patient/actuator")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -80,6 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
             }
+            
 //            List<GrantedAuthority> authorities
 //                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
@@ -107,5 +108,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
 }
-
-

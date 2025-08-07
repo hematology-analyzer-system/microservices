@@ -59,7 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 "/iam/auth/forgot-password",
                 "/iam/auth/verify-reset-otp",
                 "/iam/auth/reset-password",
-                "/iam/auth/logout"
+                "/iam/auth/logout",
+                "/iam/actuator/health"
         );
 
         if (publicPaths.contains(path)) {

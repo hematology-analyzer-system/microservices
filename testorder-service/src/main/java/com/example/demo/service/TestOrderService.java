@@ -5,6 +5,7 @@ import com.example.demo._enum.Gender;
 import com.example.demo.config.JwtProperties;
 import com.example.demo.dto.Comment.MinimalCommentResponse;
 import com.example.demo.dto.DetailResult.DetailResultResponse;
+import com.example.demo.dto.PatientRecordResponse;
 import com.example.demo.dto.Result.MinimalResultResponse;
 import com.example.demo.dto.TestOrder.AddTORequest;
 import com.example.demo.dto.TestOrder.PageTOResponse;
@@ -54,10 +55,7 @@ public class TestOrderService {
     private final PatientServiceGrpc.PatientServiceBlockingStub stub;
     private final EncryptionService encryptionService;
     private final TestOrderRabbitMQProducer rabbitMQProducer;
-
-    public TestOrderService(TestOrderRepository testOrderRepository,
-            EncryptionService encryptionService,
-            TestOrderRabbitMQProducer rabbitMQProducer) {
+    public TestOrderService(TestOrderRepository testOrderRepository,EncryptionService encryptionService, TestOrderRabbitMQProducer rabbitMQProducer) {
         this.testOrderRepository = testOrderRepository;
         this.stub = ClientRunner.getStub(); // lấy stub từ ClientRunner
         this.encryptionService = encryptionService;
@@ -69,18 +67,30 @@ public class TestOrderService {
         ClientRunner.shutdown();
     }
 
-    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
-        return PatientResponse.newBuilder()
-                .setId(originalResponse.getId())
-                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
-                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
-                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
-                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
-                .setGender(originalResponse.getGender()) // Don't encrypt gender
-                .build();
-    }
+//    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
+//        return PatientResponse.newBuilder()
+//                .setId(originalResponse.getId())
+//                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
+//                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
+//                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
+//                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
+//                .setGender(originalResponse.getGender()) // Don't encrypt gender
+//                .build();
+//    }
 
-    public TOResponse testGrpc(Integer id) {
+//    private CreatePatientRequest decryptPatientResponse(CreatePatientRequest patient) {
+//        return CreatePatientRequest.builder()
+////                .id(patient.getId())
+//                .fullName(encryptionService.decrypt(patient.getFullName()))
+//                .address(encryptionService.decrypt(patient.getAddress()))
+//                .email(encryptionService.decrypt(patient.getEmail()))
+//                .phone(encryptionService.decrypt(patient.getPhone()))
+//                .dateOfBirth(patient.getDateOfBirth()) // Date is not encrypted
+//                .gender(patient.getGender()) // Gender is not encrypted
+//                .build();
+//    }
+
+    public TOResponse testGrpc(Integer id){
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("host.docker.internal", 9091)
                 .usePlaintext()
@@ -218,39 +228,35 @@ public class TestOrderService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        // System.out.println("userPrivileges: " + userPrivileges);
-        if (!userPrivileges.contains(2L)) {
-            // String joined = userPrivileges.stream()
-            //         .map(String::valueOf)
-            //         .collect(Collectors.joining(","));
-            throw new AccessDeniedException("Access denied: Insufficient privileges.");
+        if (!userPrivileges.contains(2L)&&!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to createTO");
         }
 
-        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname(),
-                currentUser.getEmail(), currentUser.getIdentifyNum());
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
 
         try {
-            System.out.println("log 1");
+
             PatientResponse response = id.map(pid -> {
                 PatientResponse originalResponse = stub.getPatientById(PatientRequest.newBuilder().setId(pid).build());
-                System.out.println("log 2");
 
-                return encryptPatientResponse(originalResponse); // Encrypt after receiving
+                return originalResponse; // Data is already encrypted
+
             }).orElseGet(() -> {
+                // NEW PATIENT: ENCRYPT data before sending to gRPC
                 CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
-                        .setFullName(encryptionService.encrypt(addTORequest.getFullName()))
-                        .setEmail(encryptionService.encrypt(addTORequest.getEmail()))
-                        .setAddress(encryptionService.encrypt(addTORequest.getAddress()))
+                        .setFullName(encryptionService.encrypt(addTORequest.getFullName())) // ENCRYPT HERE
+                        .setEmail(encryptionService.encrypt(addTORequest.getEmail()))       // ENCRYPT HERE
+                        .setAddress(encryptionService.encrypt(addTORequest.getAddress()))   // ENCRYPT HERE
                         .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
-                        .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber()))
+                        .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber())) // ENCRYPT HERE
                         .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
                         .setCreatedBy(createdByinString)
                         .build();
-                        System.out.println("log 3");
 
                 return stub.createPatient(createPatientRequest);
             });
-            System.out.println("log 4");
 
             TestOrder testOrder = TestOrder.builder()
                     .createdBy(createdByinString)
@@ -290,6 +296,10 @@ public class TestOrderService {
             throw new RuntimeException("gRPC call failed aduni: " + e.getMessage(), e);
         }
     }
+
+
+
+
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO) {
 
@@ -349,7 +359,7 @@ public class TestOrderService {
         }
     }
 
-    public void deteleTestOrder(Long TO_id) {
+    public void deteleTestOrder(Long TO_id){
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
@@ -558,20 +568,21 @@ public class TestOrderService {
 
     public TOResponse viewDetail(Long id) {
         TestOrder testOrder = testOrderRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(1L) && !userPrivileges.contains(5L)) {
+        if (!userPrivileges.contains(1L)&&!userPrivileges.contains(5L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to view detail TO");
         }
-        // if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-        // throw new BadRequestException("Test Order Status is Not Completed");
-        // }
-        //
-        // if(testOrder.getResults().isEmpty()){
-        // throw new BadRequestException("Test Order Results is empty!");
-        // }
+//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+//            throw new BadRequestException("Test Order Status is Not Completed");
+//        }
+//
+//        if(testOrder.getResults().isEmpty()){
+//            throw new BadRequestException("Test Order Results is empty!");
+//        }
+
 
         PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
                 .setId(testOrder.getPatientTOId()).build());

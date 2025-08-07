@@ -84,6 +84,33 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
+    @PatchMapping("/{id}/lock")
+    public ResponseEntity<?> lockUser(@PathVariable Long id) {
+        int result = userService.lockUser(id);
+        if (result == 1) {
+            return ResponseEntity.ok(Collections.singletonMap("message", "User locked successfully."));
+        } else if (result == 0) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PatchMapping("/{id}/unlock")
+    public ResponseEntity<?> unlockUser(@PathVariable Long id) {
+        int result = userService.unlockUser(id);
+        if (result == 1) {
+            return ResponseEntity.ok(Collections.singletonMap("message", "User unlocked successfully."));
+        } else if (result == 0) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+
     @PostMapping("/upload")
     public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
         String uploadDir = "/upload/images/";

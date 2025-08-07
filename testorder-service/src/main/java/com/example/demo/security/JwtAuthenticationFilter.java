@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // Skip JWT auth for public paths
-        if (path.startsWith("/auth") || path.startsWith("/actuator")) {
+        if (path.startsWith("/testorder/auth") || path.startsWith("/testorder/actuator")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -75,16 +77,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Object rawPrivileges = claims.get("privilege_ids");
             Set<Long> privileges = new HashSet<>();
             if (rawPrivileges instanceof Collection<?>) {
-                System.out.println("true");
                 for (Object item : (Collection<?>) rawPrivileges) {
                     if (item instanceof Number) {
                         privileges.add(((Number) item).longValue());
                     }
                 }
             }
-            // System.out.println("privileges: " + privileges);
-            // List<GrantedAuthority> authorities
-            // = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+//            List<GrantedAuthority> authorities
+//                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
             CurrentUser currentUser = CurrentUser.builder()
                     .userId(userId)

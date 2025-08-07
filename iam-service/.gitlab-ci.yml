@@ -1,22 +1,25 @@
 # IAM Service CI/CD Pipeline
 .iam-service-changes: &iam-service-changes
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
       changes:
-        - pom.xml
-        - src/**/*
-        - .gitlab-ci.yml
+        - iam-service/pom.xml
+        - iam-service/src/**/*
+        - iam-service/.gitlab-ci.yml
+        - iam-service/Dockerfile
+
       when: always
     - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main")
       changes:
         - iam-service/pom.xml
         - iam-service/src/**/*
         - iam-service/.gitlab-ci.yml
+        - iam-service/Dockerfile
       when: always
     - when: never
 
-# Build IAM Service using Dockerfile
-build-iam-service:
+# Build and Package IAM Service
+build-and-package-iam-service:
   <<: *iam-service-changes
   stage: build
   image: docker:20.10.16
@@ -28,74 +31,6 @@ build-iam-service:
   before_script:
     - cd iam-service
     - docker info
-  script: |
-    echo "Building IAM Service using Dockerfile..."
-    export BUILD_TAG=$(date +%Y%m%d-%H%M%S)
-    echo "Build tag - $BUILD_TAG"
-    echo "Building multi-stage Dockerfile build stage only for artifacts"
-    docker build --target build -t iam-service-build:$BUILD_TAG .
-    echo "Extracting built JAR for artifacts"
-    docker create --name temp-container iam-service-build:$BUILD_TAG
-    docker cp temp-container:/app/target/ ./
-    docker rm temp-container
-    echo "IAM Service build completed"
-  artifacts:
-    paths:
-      - iam-service/target/
-    expire_in: 1 hour
-  cache:
-    key: iam-docker-$CI_COMMIT_REF_SLUG
-    paths:
-      - iam-service/.m2/repository/
-
-# Test IAM Service
-test-iam-service:
-  <<: *iam-service-changes
-  stage: test
-  image: maven:3.9.4-eclipse-temurin-21
-  services:
-    - postgres:17-alpine
-  variables:
-    POSTGRES_DB: iam_test
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: test
-    POSTGRES_HOST_AUTH_METHOD: trust
-    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iam_test
-    SPRING_DATASOURCE_USERNAME: postgres
-    SPRING_DATASOURCE_PASSWORD: test
-  before_script:
-    - cd iam-service
-  script:
-    - echo "Running IAM Service tests..."
-    - mvn $MAVEN_CLI_OPTS test
-  artifacts:
-    reports:
-      junit: iam-service/target/surefire-reports/TEST-*.xml
-      coverage_report:
-        coverage_format: jacoco
-        path: iam-service/target/site/jacoco/jacoco.xml
-    paths:
-      - iam-service/target/surefire-reports/
-      - iam-service/target/site/jacoco/
-    expire_in: 1 week
-  coverage: "/Total.*?([0-9]{1,3})%/"
-  dependencies:
-    - build-iam-service
-  when: manual # Make tests optional until they are written
-  allow_failure: true # Don't block pipeline if tests fail
-
-# Package IAM Service - Full Docker Build
-package-iam-service:
-  <<: *iam-service-changes
-  stage: package
-  image: docker:20.10.16
-  services:
-    - docker:20.10.16-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
-  before_script:
-    - cd iam-service
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script: |
     echo "Building and pushing IAM Service Docker image..."
@@ -107,9 +42,47 @@ package-iam-service:
     echo "Pushing Docker images..."
     docker push $REGISTRY/iam-service:$DATETIME
     docker push $REGISTRY/iam-service:latest
-    echo "IAM Service Docker image pushed successfully"
+    echo "IAM Service Docker image built and pushed successfully"
     echo "Available images:"
     echo "  - $REGISTRY/iam-service:$DATETIME"
     echo "  - $REGISTRY/iam-service:latest"
-  dependencies:
-    - build-iam-service # Ensure build completed first
+  cache:
+    key: iam-docker-$CI_COMMIT_REF_SLUG
+    paths:
+      - iam-service/.m2/repository/
+
+# Test IAM Service
+# test-iam-service:
+#   <<: *iam-service-changes
+#   stage: test
+#   image: maven:3.9.4-eclipse-temurin-21
+#   services:
+#     - postgres:17-alpine
+#   variables:
+#     POSTGRES_DB: iam_test
+#     POSTGRES_USER: postgres
+#     POSTGRES_PASSWORD: test
+#     POSTGRES_HOST_AUTH_METHOD: trust
+#     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iam_test
+#     SPRING_DATASOURCE_USERNAME: postgres
+#     SPRING_DATASOURCE_PASSWORD: test
+#   before_script:
+#     - cd iam-service
+#   script:
+#     - echo "Running IAM Service tests..."
+#     - mvn $MAVEN_CLI_OPTS test
+#   artifacts:
+#     reports:
+#       junit: iam-service/target/surefire-reports/TEST-*.xml
+#       coverage_report:
+#         coverage_format: jacoco
+#         path: iam-service/target/site/jacoco/jacoco.xml
+#     paths:
+#       - iam-service/target/surefire-reports/
+#       - iam-service/target/site/jacoco/
+#     expire_in: 1 week
+#   coverage: "/Total.*?([0-9]{1,3})%/"
+#   dependencies:
+#     - build-iam-service
+#   when: manual # Make tests optional until they are written
+#   allow_failure: true # Don't block pipeline if tests fail
