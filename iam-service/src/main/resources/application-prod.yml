@@ -84,3 +84,10 @@ mailtrap:
   sender:
     email: ${MAILTRAP_SENDER_EMAIL}
     name: ${MAILTRAP_SENDER_NAME}
+
+spaces:
+  access-key: ${SPACES_ACCESS_KEY}
+  secret-key: ${SPACES_SECRET_KEY}
+  endpoint: https://sgp1.digitaloceanspaces.com
+  bucket-name: fhard-microservices
+  region: sgp1

@@ -5,6 +5,7 @@ import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.*;
+import com.example.user.model.UserAuditLog;
 import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,15 +32,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AuditorAware<UserAuditInfo> auditorAware;
     private final ModifiedHistoryRepository historyRepository;
-    private static final Logger log = (Logger) LoggerFactory.getLogger(UserService.class);
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private SimpMessagingTemplate messageTemplate;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     String defaultMalePic = "/images/defaultMale.png";
     String defaultFemalePic = "/images/defaultFemale.png";
@@ -108,6 +115,7 @@ public class UserService {
                 assignRoleToUser(user.getId(), request.getRoleIds());
                 userRepository.save(user);
                 log.info("User {} registered successfully with PENDING_ACTIVATION status.", user.getEmail());
+                messageTemplate.convertAndSend("/topic/userCreated", user);
                 sendMailActivation(user.getEmail());
                 return ResponseEntity.ok(Collections.singletonMap("message", "User is created successfully!"));
             }
@@ -183,6 +191,13 @@ private void sendMailActivation(String email) {
             }
             user.get().setStatus("INACTIVE");
             userRepository.save(user.get());
+            // Send RabbitMQ message for audit logging
+            UserAuditLog auditLog = new UserAuditLog();
+            auditLog.setUserId(user.get().getId());
+            auditLog.setFullName(user.get().getFullName());
+            auditLog.setAction("DELETE_USER");
+            auditLog.setDetails("User soft deleted by " + currentUser.getFullName());
+            rabbitTemplate.convertAndSend("appExchange", "user.softDelete", auditLog);
             return 1;
         }
 
@@ -194,11 +209,27 @@ private void sendMailActivation(String email) {
         if (validatePrivileges(currentUser, 17L)) {
             Optional<User> user = userRepository.findById(id);
             if (user.isEmpty()) {
+                log.info("User with id {} not found", id);
                 return 2;
             }
             user.get().setStatus("INACTIVE");
             userRepository.save(user.get());
-            return 1;
+            
+            // Send RabbitMQ message for audit logging
+            UserAuditLog auditLog = new UserAuditLog();
+            auditLog.setUserId(user.get().getId());
+            // auditLog.setUsername(user.get().getEmail()); // Removed: No such method in UserAuditLog
+            auditLog.setFullName(user.get().getFullName());
+            auditLog.setEmail(user.get().getEmail());
+            auditLog.setIdentifyNum(user.get().getIdentifyNum());
+            auditLog.setDetails("User locked by " + currentUser.getFullName());
+            
+            System.out.println("UserService - Sending lock message to RabbitMQ: " + auditLog);
+            rabbitTemplate.convertAndSend("appExchange", "user.lock", auditLog);
+            
+            // Removed direct WebSocket message to prevent duplicates
+            // WebSocket notifications are now handled by UserAuditLogConsumer
+            return 1; 
         }
         return 0;
     }
@@ -212,6 +243,21 @@ private void sendMailActivation(String email) {
             }
             user.get().setStatus("ACTIVE");
             userRepository.save(user.get());
+            
+            // Send RabbitMQ message for audit logging
+            UserAuditLog auditLog = new UserAuditLog();
+            auditLog.setUserId(user.get().getId());
+            // auditLog.setUsername(user.get().getEmail()); // Removed: No such method in UserAuditLog
+            auditLog.setFullName(user.get().getFullName());
+            auditLog.setEmail(user.get().getEmail());
+            auditLog.setIdentifyNum(user.get().getIdentifyNum());
+            auditLog.setDetails("User unlocked by " + currentUser.getFullName());
+            
+            System.out.println("UserService - Sending unlock message to RabbitMQ: " + auditLog);
+            rabbitTemplate.convertAndSend("appExchange", "user.unlock", auditLog);
+            
+            // Removed direct WebSocket message to prevent duplicates
+            // WebSocket notifications are now handled by UserAuditLogConsumer
             return 1;
         }
         return 0;

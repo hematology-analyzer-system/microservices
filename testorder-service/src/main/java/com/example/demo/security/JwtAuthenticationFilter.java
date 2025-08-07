@@ -67,7 +67,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String token = jwt;
 
-        try {
+        if (token == null || token.trim().isEmpty()) {
+            log.warn("No JWT found in request.");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+        try{
             Claims claims = jwtService.getClaimsFromToken(token);
             String username = claims.getSubject(); // sub
             Long userId = claims.get("userid", Long.class);
