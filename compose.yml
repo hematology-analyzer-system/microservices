@@ -87,6 +87,8 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://admin:bavui4444@mongodb:27017/microservices?authSource=admin
       # Dummy Mailtrap token
       MAILTRAP_API_TOKEN: dummy_token
+      SPACES_ACCESS_KEY : 946rJPE3XXOMn27be9z+YSpybN9GPz9ZNeEh2ylsjXc
+      SPACES_SECRET_KEY : hahahaha
     ports:
       - "127.0.0.1:8080:8080"
       - "127.0.0.1:9090:9090"

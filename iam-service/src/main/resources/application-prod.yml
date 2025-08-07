@@ -63,3 +63,5 @@ mailtrap:
   sender:
     email: ${MAILTRAP_SENDER_EMAIL}
     name: ${MAILTRAP_SENDER_NAME}
+
+

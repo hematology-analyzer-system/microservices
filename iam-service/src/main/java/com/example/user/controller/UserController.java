@@ -5,6 +5,8 @@ import com.example.user.model.User;
 import com.example.user.model.UserAuditLog;
 import com.example.user.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,9 @@ import java.util.UUID;
 
 import com.example.user.dto.search.searchDTO;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
 
 @RestController
 @RequestMapping("/users")
@@ -140,19 +145,19 @@ public class UserController {
     }
 
 
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
-        String uploadDir = "/upload/images/";
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(uploadDir + filename);
-        Files.copy(file.getInputStream(), path);
-
-        String publicUrl = "http://localhost:8080/upload/images/" + filename;
-        
-        auditLog.setDetails("Profile picture uploaded: " + publicUrl);
-        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", auditLog);
-        return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
-    }
+//    @PostMapping("/upload")
+//    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
+//        String uploadDir = "/upload/images/";
+//        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+//        Path path = Paths.get(uploadDir + filename);
+//        Files.copy(file.getInputStream(), path);
+//
+//        String publicUrl = "http://localhost:8080/upload/images/" + filename;
+//        
+//        auditLog.setDetails("Profile picture uploaded: " + publicUrl);
+//        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", auditLog);
+//        return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<PageUserResponse> searchUsers(
