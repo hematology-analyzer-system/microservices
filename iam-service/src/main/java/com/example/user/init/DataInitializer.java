@@ -277,6 +277,10 @@ public class DataInitializer {
         insertUserIfNotExists("manager@sys.com", "Manager", "MANAGER", "male", "0002");
         insertUserIfNotExists("service@sys.com", "Service", "SERVICE", "female", "0003");
         insertUserIfNotExists("labuser@sys.com", "Lab User", "LAB_USER", "female", "0004");
+        insertUserIfNotExists("testuser@sys.com", "Test User", "LAB_USER", "male", "0005");
+        insertUserIfNotExists("newuser@sys.com", "New User", "LAB_USER", "female", "0006");
+        insertUserIfNotExists("extrauser@sys.com", "Extra User", "LAB_USER", "male", "0007");
+        insertUserIfNotExists("anotheruser@sys.com", "Another User", "LAB_USER", "female", "0008");
     }
 
     private void insertUserIfNotExists(String email, String fullName, String roleCode, String gender, String identifyNum) {

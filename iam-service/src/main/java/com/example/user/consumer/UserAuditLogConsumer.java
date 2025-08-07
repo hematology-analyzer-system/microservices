@@ -4,6 +4,7 @@ import com.example.user.model.UserAuditLog;
 import com.example.user.repository.UserAuditLogRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -12,6 +13,9 @@ import java.time.LocalDateTime;
 public class UserAuditLogConsumer {
     @Autowired
     private UserAuditLogRepository userAuditLogRepository;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     // @RabbitListener(queues = {
     //     "registerQueue", "loginQueue", "resendOtpQueue", "verifyOtpQueue", "forgotPasswordQueue", "verifyResetOtpQueue", "resetPasswordQueue", "verifyActivationOtpQueue", "activationQueue", "sendVerificationOtpQueue", "generateOtpQueue", "logoutQueue"
@@ -193,6 +197,7 @@ public class UserAuditLogConsumer {
         userAuditLog.setAction("USER_CREATE");
         userAuditLog.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
         userAuditLogRepository.save(userAuditLog);
+        messagingTemplate.convertAndSend("/topic/userCreated", userAuditLog);
     }
 
     // get user by id event
@@ -203,12 +208,53 @@ public class UserAuditLogConsumer {
         userAuditLogRepository.save(userAuditLog);
     }
 
+    // user lock
+    @RabbitListener(queues = "userLockQueue")
+    public void receiveUserLockEvent(UserAuditLog userAuditLog) {
+        try {
+            // Use the existing userAuditLog object and update it
+            userAuditLog.setAction("LOCK_USER");
+            userAuditLog.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+            
+            userAuditLogRepository.save(userAuditLog);
+            System.out.println("UserAuditLogConsumer - Saved lock event to MongoDB with action: LOCK_USER");
+            
+            // Send real-time WebSocket notification
+            messagingTemplate.convertAndSend("/topic/userLocked", userAuditLog);
+            System.out.println("UserAuditLogConsumer - Sent WebSocket notification for lock event");
+        } catch (Exception e) {
+            System.err.println("UserAuditLogConsumer - Error processing lock event: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // user unlock
+    @RabbitListener(queues = "userUnlockQueue")
+    public void receiveUserUnlockEvent(UserAuditLog userAuditLog) {
+        try {
+            // Use the existing userAuditLog object and update it
+            userAuditLog.setAction("UNLOCK_USER");
+            userAuditLog.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+            
+            userAuditLogRepository.save(userAuditLog);
+            System.out.println("UserAuditLogConsumer - Saved unlock event to MongoDB with action: UNLOCK_USER");
+            
+            // Send real-time WebSocket notification
+            messagingTemplate.convertAndSend("/topic/userUnlocked", userAuditLog);
+            System.out.println("UserAuditLogConsumer - Sent WebSocket notification for unlock event");
+        } catch (Exception e) {
+            System.err.println("UserAuditLogConsumer - Error processing unlock event: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     // delete user event by id
     @RabbitListener(queues = "userDeleteQueue")
     public void receiveUserDeleteEvent(UserAuditLog userAuditLog) {
-        userAuditLog.setAction("USER_DELETE");
+        userAuditLog.setAction("DELETE_USER");
         userAuditLog.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
         userAuditLogRepository.save(userAuditLog);
+        messagingTemplate.convertAndSend("/topic/userDeleted", userAuditLog);
     }
 
     // upload user image event
