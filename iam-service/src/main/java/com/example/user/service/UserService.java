@@ -134,7 +134,7 @@ public class UserService {
 
 private void sendMailActivation(String email) {
     String subject = "Activate Your Account";
-    String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
+    String frontendLink = "https://fhard.khoa.email/api/iam/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
 
     String emailBody =
             "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
