@@ -100,7 +100,18 @@ public class PatientServiceImpl implements PatientService {
         // Send Add-patient-event to RabbitMQ
         patientRabbitMQProducer.sendAddPatientEvent(newPatient);
 
-        return decryptPatientResponse(newPatient);
+        return PatientRecordResponse.builder()
+                .id(newPatient.getId())
+                .fullName(newPatient.getFullName())
+                .address(newPatient.getAddress())
+                .email(newPatient.getEmail())
+                .phone(newPatient.getPhone())
+                .dateOfBirth(newPatient.getDateOfBirth())
+                .gender(newPatient.getGender())
+                .createdAt(newPatient.getCreatedAt())
+                .updatedAt(newPatient.getUpdatedAt())
+                .build();
+
     }
 
     @Override
@@ -132,7 +143,18 @@ public class PatientServiceImpl implements PatientService {
         // Send Update-patient-event to RabbitMQ
         patientRabbitMQProducer.sendUpdatePatientEvent(updatedPatient);
 
-        return decryptPatientResponse(updatedPatient);
+        return PatientRecordResponse.builder()
+                .id(updatedPatient.getId())
+                .fullName(updatedPatient.getFullName())
+                .address(updatedPatient.getAddress())
+                .email(updatedPatient.getEmail())
+                .phone(updatedPatient.getPhone())
+                .dateOfBirth(updatedPatient.getDateOfBirth())
+                .gender(updatedPatient.getGender())
+                .createdAt(updatedPatient.getCreatedAt())
+                .updatedAt(updatedPatient.getUpdatedAt())
+                .build();
+
     }
 
     @Override
@@ -150,7 +172,18 @@ public class PatientServiceImpl implements PatientService {
         // Sent Delete-patient-event to RabbitMQ
         patientRabbitMQProducer.sendDeletePatientEvent(deletePatient);
 
-        return decryptPatientResponse(deletePatient);
+        return PatientRecordResponse.builder()
+                .id(deletePatient.getId())
+                .fullName(deletePatient.getFullName())
+                .address(deletePatient.getAddress())
+                .email(deletePatient.getEmail())
+                .phone(deletePatient.getPhone())
+                .dateOfBirth(deletePatient.getDateOfBirth())
+                .gender(deletePatient.getGender())
+                .createdAt(deletePatient.getCreatedAt())
+                .updatedAt(deletePatient.getUpdatedAt())
+                .build();
+
     }
 
     @Override

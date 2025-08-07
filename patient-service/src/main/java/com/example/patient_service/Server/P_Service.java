@@ -181,12 +181,12 @@ public class P_Service extends PatientServiceGrpc.PatientServiceImplBase {
             }
 
 //             Email if you have it encrypted
-//            if (patient.getEmail() != null && !patient.getEmail().isEmpty()) {
-//                String decryptedEmail = encryptionService.decrypt(patient.getEmail());
-//                if (decryptedEmail != null && decryptedEmail.toLowerCase().contains(searchKeyword)) {
-//                    return true;
-//                }
-//            }
+            if (patient.getEmail() != null && !patient.getEmail().isEmpty()) {
+                String decryptedEmail = encryptionService.decrypt(patient.getEmail());
+                if (decryptedEmail != null && decryptedEmail.toLowerCase().contains(searchKeyword)) {
+                    return true;
+                }
+            }
 
             return false;
 

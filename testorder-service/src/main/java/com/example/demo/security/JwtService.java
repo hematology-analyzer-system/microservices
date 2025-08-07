@@ -34,7 +34,7 @@ public class JwtService {
         try {
             Claims claims = getClaimsFromToken(token);
             return true;
-        } catch (JwtException e){
+        } catch (JwtException e) {
             return false;
         }
     }

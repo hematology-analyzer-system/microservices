@@ -1,20 +1,20 @@
-package com.example.user.rabbitmq;
+// package com.example.user.rabbitmq;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+// import org.springframework.amqp.rabbit.core.RabbitTemplate;
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.stereotype.Service;
 
-@Service
-public class RabbitMQProducer {
+// @Service
+// public class RabbitMQProducer {
 
-    private final RabbitTemplate rabbitTemplate;
+//     private final RabbitTemplate rabbitTemplate;
 
-    @Autowired
-    public RabbitMQProducer(RabbitTemplate rabbitTemplate) {
-        this.rabbitTemplate = rabbitTemplate;
-    }
+//     @Autowired
+//     public RabbitMQProducer(RabbitTemplate rabbitTemplate) {
+//         this.rabbitTemplate = rabbitTemplate;
+//     }
 
-    public void sendMessage(Object message) {
-        rabbitTemplate.convertAndSend("queueName", message);
-    }
-}
+//     public void sendMessage(Object message) {
+//         rabbitTemplate.convertAndSend("queueName", message);
+//     }
+// }

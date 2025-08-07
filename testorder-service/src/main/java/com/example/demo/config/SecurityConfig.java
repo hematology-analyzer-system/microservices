@@ -67,12 +67,13 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-//    private final UserDetailsService userDetailsService;
+    // private final UserDetailsService userDetailsService;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow specific origins. In a production environment, replace "*" with your actual frontend URL(s).
+        // Allow specific origins. In a production environment, replace "*" with your
+        // actual frontend URL(s).
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://your-production-frontend.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
@@ -89,36 +90,33 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 // No CORS configuration needed for backend-only
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Use the corsConfigurationSource bean
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Use the corsConfigurationSource
+                                                                                   // bean
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers(
-                                        "/actuator/health",
-                                        "/actuator/info"
-                                )
-                                .permitAll()
-//                                .requestMatchers("/auth/register").permitAll()
-//                        .requestMatchers("/public/**").permitAll() // Add any other public endpoints
-                                .anyRequest().authenticated()
-                )
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/info")
+                        .permitAll()
+                        // .requestMatchers("/auth/register").permitAll()
+                        .requestMatchers("/api/messages/**").permitAll()
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-//                .authenticationProvider(authenticationProvider())
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .build();
     }
 
-//    @Bean
-//    public DaoAuthenticationProvider authenticationProvider() {
-//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-//        provider.setUserDetailsService(userDetailsService);
-//        provider.setPasswordEncoder(passwordEncoder());
-//        return provider;
-//    }
+    // @Bean
+    // public DaoAuthenticationProvider authenticationProvider() {
+    // DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    // provider.setUserDetailsService(userDetailsService);
+    // provider.setPasswordEncoder(passwordEncoder());
+    // return provider;
+    // }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

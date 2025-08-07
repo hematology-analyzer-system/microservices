@@ -58,3 +58,7 @@ logging:
 
 jwt:
   secret: ${JWT_SECRET}
+
+app:
+  encryption:
+    secret-key: ${APP_ENCRYPTION_SECRET_KEY}

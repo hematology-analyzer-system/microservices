@@ -1,14 +1,15 @@
 # Test Orders Service CI/CD Pipeline
 .testorder-service-changes: &testorder-service-changes
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
-      changes:
-        - testorder-service/pom.xml
-        - testorder-service/src/**/*
-        - testorder-service/.gitlab-ci.yml
-        - testorder-service/Dockerfile
-      when: always
-    - if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main")
+    # - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")
+    #   changes:
+    #     - testorder-service/pom.xml
+    #     - testorder-service/src/**/*
+    #     - testorder-service/.gitlab-ci.yml
+    #     - testorder-service/Dockerfile
+
+    #   when: always
+    - if: $CI_COMMIT_BRANCH == "main" # || $CI_COMMIT_BRANCH == "develop"
       changes:
         - testorder-service/pom.xml
         - testorder-service/src/**/*

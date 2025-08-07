@@ -5,6 +5,8 @@ import com.example.user.model.User;
 import com.example.user.model.UserAuditLog;
 import com.example.user.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,9 @@ import java.util.UUID;
 
 import com.example.user.dto.search.searchDTO;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
 
 @RestController
 @RequestMapping("/users")
@@ -36,8 +41,13 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
-        auditLog.setDetails("User created: " + request.getFullName());
-        rabbitTemplate.convertAndSend("appExchange", "user.create", auditLog);
+        UserAuditLog createAuditLog = new UserAuditLog();
+        createAuditLog.setFullName(request.getFullName());
+        createAuditLog.setEmail(request.getEmail());
+        createAuditLog.setIdentifyNum(request.getIdentifyNum());
+        // createAuditLog.setDetails("User created: " + request.getFullName());
+        createAuditLog.setAction("CREATE_USER");
+        rabbitTemplate.convertAndSend("appExchange", "user.create", createAuditLog);
         return userService.createUser(request);
     }
 
@@ -60,7 +70,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         auditLog.setUserId(id);
-        
+        auditLog.setAction("DELETE_USER");
+        auditLog.setFullName("User with ID " + id + " deleted");
         auditLog.setDetails("User deleted: id=" + id);
         rabbitTemplate.convertAndSend("appExchange", "user.delete", auditLog);
         if (userService.softDeleteUser(id) == 1) {
@@ -86,44 +97,67 @@ public class UserController {
 
     @PatchMapping("/{id}/lock")
     public ResponseEntity<?> lockUser(@PathVariable Long id) {
+        System.out.println("=== LOCK ENDPOINT CALLED for user ID: " + id + " ===");
         int result = userService.lockUser(id);
+        System.out.println("Lock user result for ID " + id + ": " + result);
         if (result == 1) {
+            // UserService already sends the RabbitMQ message, no need to duplicate
+            System.out.println("User locked successfully, notification sent by UserService");
             return ResponseEntity.ok(Collections.singletonMap("message", "User locked successfully."));
         } else if (result == 0) {
+            System.out.println("Lock failed: Access denied (insufficient privileges) for user ID: " + id);
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        } else if (result == 2) {
+            System.out.println("Lock failed: User not found for ID: " + id);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", "User not found."));
         }
-        return ResponseEntity.notFound().build();
+        System.out.println("Lock failed: Unknown error for user ID: " + id);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("error", "Unknown error occurred."));
     }
-
     @PatchMapping("/{id}/unlock")
     public ResponseEntity<?> unlockUser(@PathVariable Long id) {
+        System.out.println("=== UNLOCK ENDPOINT CALLED for user ID: " + id + " ===");
         int result = userService.unlockUser(id);
+        System.out.println("Unlock user result for ID " + id + ": " + result);
         if (result == 1) {
+            // UserService already sends the RabbitMQ message, no need to duplicate
+            System.out.println("User unlocked successfully, notification sent by UserService");
             return ResponseEntity.ok(Collections.singletonMap("message", "User unlocked successfully."));
         } else if (result == 0) {
+            System.out.println("Unlock failed: Access denied (insufficient privileges) for user ID: " + id);
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        } else if (result == 2) {
+            System.out.println("Unlock failed: User not found for ID: " + id);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", "User not found."));
         }
-        return ResponseEntity.notFound().build();
+        System.out.println("Unlock failed: Unknown error for user ID: " + id);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("error", "Unknown error occurred."));
     }
 
 
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
-        String uploadDir = "/upload/images/";
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(uploadDir + filename);
-        Files.copy(file.getInputStream(), path);
-
-        String publicUrl = "http://localhost:8080/upload/images/" + filename;
-        
-        auditLog.setDetails("Profile picture uploaded: " + publicUrl);
-        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", auditLog);
-        return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
-    }
+//    @PostMapping("/upload")
+//    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) throws IOException {
+//        String uploadDir = "/upload/images/";
+//        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+//        Path path = Paths.get(uploadDir + filename);
+//        Files.copy(file.getInputStream(), path);
+//
+//        String publicUrl = "http://localhost:8080/upload/images/" + filename;
+//        
+//        auditLog.setDetails("Profile picture uploaded: " + publicUrl);
+//        rabbitTemplate.convertAndSend("appExchange", "user.uploadProfilePic", auditLog);
+//        return ResponseEntity.ok(Collections.singletonMap("url", publicUrl));
+//    }
 
     @GetMapping("/search")
     public ResponseEntity<PageUserResponse> searchUsers(
@@ -154,11 +188,13 @@ public class UserController {
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId,
             @RequestBody @Valid ChangePasswordRequest request) {
-        userService.changePassword(userId, request);
-        auditLog.setUserId(userId);
-        auditLog.setDetails("Password changed for user ID: " + userId);
-        rabbitTemplate.convertAndSend("appExchange", "user.changePassword", auditLog);
-        return ResponseEntity.ok("Password changed successfully.");
+        if (userService.changePassword(userId, request.getOldPassword(), request.getNewPassword()) ) {
+            auditLog.setUserId(userId);
+            auditLog.setDetails("Password changed for user ID: " + userId);
+            rabbitTemplate.convertAndSend("appExchange", "user.changePassword", auditLog);
+            return ResponseEntity.ok("Password changed successfully.");
+        }
+        return ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/filter")
