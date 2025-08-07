@@ -1,0 +1,30 @@
+# Healthcare Microservices CI Pipeline
+# Focus: Build, Test, Package using Dockerfiles (No Deployment)
+
+# Workflow rules - only run on MR to develop/main and direct pushes to develop/main
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
+
+variables:
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+  # Container Registry
+  REGISTRY: registry.gitlab.com/healthcare5314327/microservices
+
+stages:
+  - validate
+  - build
+  - package
+
+# Include service-specific CI configurations
+include:
+  - local: "iam-service/.gitlab-ci.yml"
+  - local: "patient-service/.gitlab-ci.yml"
+  - local: "testorder-service/.gitlab-ci.yml"

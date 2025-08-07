@@ -1,0 +1,234 @@
+package com.example.demo.service;
+
+import com.example.demo._enum.Gender;
+import com.example.demo.Client.ClientRunner;
+import com.example.demo.dto.DetailResult.DetailResultResponse;
+import com.example.demo.dto.Result.ResultResponse;
+import com.example.demo.dto.Result.ReviewResultRequest;
+import com.example.demo.entity.*;
+import com.example.demo.exception.ApiException;
+import com.example.demo.exception.BadRequestException;
+import com.example.demo.repository.ResultRepository;
+import com.example.demo.repository.TestOrderRepository;
+import com.example.demo.security.CurrentUser;
+import com.example.grpc.patient.PatientRequest;
+import com.example.grpc.patient.PatientResponse;
+import com.example.grpc.patient.PatientServiceGrpc;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import jakarta.annotation.PreDestroy;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class ResultService {
+    private final ResultRepository resultRepository;
+    private final TestOrderRepository testOrderRepository;
+
+    private final PatientServiceGrpc.PatientServiceBlockingStub stub;
+
+    public ResultService(ResultRepository resultRepository, TestOrderRepository testOrderRepository) {
+        this.resultRepository = resultRepository;
+        this.testOrderRepository = testOrderRepository;
+        this.stub = ClientRunner.getStub();
+    }
+
+    @PreDestroy
+    public void onDestroy(){
+        ClientRunner.shutdown();
+    }
+
+
+    private String formalizeCreatedBy(Long id, String name, String email, String identifyNum){
+        return String.format(
+                "ID: %d | Name: %s | Email: %s | IdNum: %s",
+                id, name, email, identifyNum
+        );
+    }
+
+    private static final List<DetailParam> detailParams = List.of(
+            new DetailParam("WBC", 4.0, 10.0, "cells/μL", Gender.MALE),
+            new DetailParam("WBC", 4.0, 10.0, "cells/μL", Gender.FEMALE),
+
+            new DetailParam("RBC", 4.7, 6.1, "million/μL", Gender.MALE),
+            new DetailParam("RBC", 4.2, 5.4, "million/μL", Gender.FEMALE),
+
+            new DetailParam("Hb/HGB", 14.0, 18.0, "g/dL", Gender.MALE),
+            new DetailParam("Hb/HGB", 12.0, 16.0, "g/dL", Gender.FEMALE),
+
+            new DetailParam("HCT", 42.0, 52.0, "%", Gender.MALE),
+            new DetailParam("HCT", 37.0, 47.0, "%", Gender.FEMALE),
+
+            new DetailParam("PLT", 150.0, 350.0, "cells/μL", Gender.MALE),
+            new DetailParam("PLT", 150.0, 350.0, "cells/μL", Gender.FEMALE),
+
+            new DetailParam("MCV", 80.0, 100.0, "fL", Gender.MALE),
+            new DetailParam("MCV", 80.0, 100.0, "fL", Gender.FEMALE),
+
+            new DetailParam("MCH", 27.0, 33.0, "pg", Gender.MALE),
+            new DetailParam("MCH", 27.0, 33.0, "pg", Gender.FEMALE),
+
+            new DetailParam("MCHC", 32.0, 36.0, "g/dL", Gender.MALE),
+            new DetailParam("MCHC", 32.0, 36.0, "g/dL", Gender.FEMALE)
+    );
+
+    public DetailResult genDetailResult(String name, double min, double max, String unit) {
+        double value = Math.round((Math.random() * (max - min) + min) * 10.0) / 10.0;
+
+        return DetailResult.builder()
+                .paramName(name)
+                .value(value)
+                .unit(unit)
+                .rangeMin(min)
+                .rangeMax(max)
+                .build();
+    }
+
+    public List<DetailResult> genAllDetailResult(Gender gender){
+        return detailParams.stream()
+                .filter(d -> d.gender().equals(gender))
+                .map(d -> genDetailResult(d.name(), d.min(), d.max(), d.unit()))
+                .toList();
+    }
+
+    public ResultResponse genDetail(Long testOrderId){
+        TestOrder testOrder = testOrderRepository.findById(testOrderId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"Test Order not found"));
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(5L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to review result");
+        }
+        if(!testOrder.getStatus().equalsIgnoreCase("PENDING")){
+            throw new BadRequestException("Test Order Status must be PENDING");
+        }
+
+        Result result = new Result();
+
+        result.setTestOrder(testOrder);
+        testOrder.getResults().add(result);
+
+
+        PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
+                .setId(testOrder.getPatientTOId()).build());
+
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        List<DetailResult> detailResults = genAllDetailResult(patient.getGender()
+                .equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE);
+
+
+
+        for (DetailResult detail : detailResults) {
+            detail.setResult(result);
+        }
+
+        result.setDetailResults(detailResults);
+        result.setReviewed(false);
+
+        testOrder.setStatus("COMPLETED");
+        testOrder.setRunBy(createdByinString);
+
+        testOrderRepository.save(testOrder);
+
+        List<DetailResultResponse> detailResultResponses = result.getDetailResults().stream()
+                .map(res -> {
+                    DetailResultResponse d = new DetailResultResponse();
+                    d.setParamName(res.getParamName());
+                    d.setUnit(res.getUnit());
+                    d.setRangeMin(res.getRangeMin());
+                    d.setRangeMax(res.getRangeMax());
+                    d.setValue(res.getValue());
+
+                    return d;
+                }).toList();
+
+        return ResultResponse.builder()
+                .reviewed(result.getReviewed())
+                .resultList(detailResultResponses)
+                .build();
+    }
+    @Transactional
+    public List<DetailResultResponse> updateAllDetails(
+            Long resultId,
+            List<ReviewResultRequest> reqs
+    ) {
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(5L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to review and modify result");
+        }
+        // 1. Lấy result và testOrder
+        Result result = resultRepository.findById(resultId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Result not found"));
+        TestOrder testOrder = result.getTestOrder();
+
+
+        // 2. Chạy reviewResult trên từng detail
+        List<DetailResultResponse> responses = reqs.stream()
+                .map(r -> reviewResult(resultId, r))
+                .collect(Collectors.toList());
+
+        // 3. Sau khi đã review hết, đánh dấu cả testOrder là REVIEWED
+        testOrder.setStatus("REVIEWED");
+        testOrderRepository.save(testOrder);
+
+        return responses;
+    }
+
+    public DetailResultResponse reviewResult (Long resultId, ReviewResultRequest reviewResultRequest){
+        Result result = resultRepository.findById(resultId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"Result not found"));
+
+        TestOrder testOrder = result.getTestOrder();
+
+        Double value = reviewResultRequest.getValue();
+
+        if(testOrder.getStatus().equalsIgnoreCase("PENDING")){
+            throw new BadRequestException("Test Order Status is pending");
+        }
+
+        DetailResult d = result.getDetailResults().stream()
+                .filter(detailResult -> detailResult.getParamName().equalsIgnoreCase(reviewResultRequest.getParamName()))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"Detail Result not found"));
+
+        if(value > d.getRangeMax() || value < d.getRangeMin()){
+            throw new BadRequestException("Value is Not In Range");
+        }
+
+        CurrentUser currentUser = (CurrentUser)SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+
+        d.setValue(value);
+        result.setReviewed(true);
+        result.setUpdateBy(createdByinString);
+
+        resultRepository.save(result);
+
+
+        return DetailResultResponse.builder()
+                .paramName(d.getParamName())
+                .value(d.getValue())
+                .unit(d.getUnit())
+                .rangeMin(d.getRangeMin())
+                .rangeMax(d.getRangeMax())
+                .build();
+    }
+}
