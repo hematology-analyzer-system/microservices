@@ -57,12 +57,9 @@ logging:
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
 
-mailtrap:
+resend:
   api:
-    token: ${MAILTRAP_API_TOKEN}
-  sender:
-    email: ${MAILTRAP_SENDER_EMAIL}
-    name: ${MAILTRAP_SENDER_NAME}
+    key: ${RESEND_API_KEY:hihi}
 
 spaces:
   access-key: ${SPACES_ACCESS_KEY}

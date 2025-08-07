@@ -53,13 +53,6 @@ logging:
       package:
         name: DEBUG
 
-mailtrap:
-  api:
-    token: ${MAILTRAP_API_TOKEN:dummy_value}
-  sender:
-    email: ${MAILTRAP_SENDER_EMAIL:no-reply@khoa.email}
-    name: ${MAILTRAP_SENDER_NAME:dummy_name}
-
 resend:
   api:
     key: ${RESEND_API_KEY:hihi}
