@@ -171,7 +171,8 @@ public class AuthController {
                     .secure(true) // Set to true in production with HTTPS
                     .path("/")
                     .maxAge(Duration.ofDays(1))
-                    .sameSite("Lax") // Can be "Strict" for stronger protection
+//                    .sameSite("Lax") // Can be "Strict" for stronger protection
+                    .sameSite("None")
                     .build();
 
             // Set cookie in header
