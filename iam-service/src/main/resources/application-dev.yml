@@ -65,4 +65,4 @@ spaces:
   secret-key: ${SPACES_SECRET_KEY}
   endpoint: https://sgp1.digitaloceanspaces.com
   bucket-name: fhard-microservices
-  region : sgp1
+  region: sgp1
