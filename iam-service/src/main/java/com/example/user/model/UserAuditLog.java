@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "rabbitmq_messages")
+@Document(collection = "iamMessage")
 public class UserAuditLog {
     @Id
     private String id;

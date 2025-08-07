@@ -36,8 +36,13 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
-        auditLog.setDetails("User created: " + request.getFullName());
-        rabbitTemplate.convertAndSend("appExchange", "user.create", auditLog);
+        UserAuditLog createAuditLog = new UserAuditLog();
+        createAuditLog.setFullName(request.getFullName());
+        createAuditLog.setEmail(request.getEmail());
+        createAuditLog.setIdentifyNum(request.getIdentifyNum());
+        // createAuditLog.setDetails("User created: " + request.getFullName());
+        createAuditLog.setAction("CREATE_USER");
+        rabbitTemplate.convertAndSend("appExchange", "user.create", createAuditLog);
         return userService.createUser(request);
     }
 
@@ -60,7 +65,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         auditLog.setUserId(id);
-        
+        auditLog.setAction("DELETE_USER");
+        auditLog.setFullName("User with ID " + id + " deleted");
         auditLog.setDetails("User deleted: id=" + id);
         rabbitTemplate.convertAndSend("appExchange", "user.delete", auditLog);
         if (userService.softDeleteUser(id) == 1) {
@@ -86,28 +92,51 @@ public class UserController {
 
     @PatchMapping("/{id}/lock")
     public ResponseEntity<?> lockUser(@PathVariable Long id) {
+        System.out.println("=== LOCK ENDPOINT CALLED for user ID: " + id + " ===");
         int result = userService.lockUser(id);
+        System.out.println("Lock user result for ID " + id + ": " + result);
         if (result == 1) {
+            // UserService already sends the RabbitMQ message, no need to duplicate
+            System.out.println("User locked successfully, notification sent by UserService");
             return ResponseEntity.ok(Collections.singletonMap("message", "User locked successfully."));
         } else if (result == 0) {
+            System.out.println("Lock failed: Access denied (insufficient privileges) for user ID: " + id);
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        } else if (result == 2) {
+            System.out.println("Lock failed: User not found for ID: " + id);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", "User not found."));
         }
-        return ResponseEntity.notFound().build();
+        System.out.println("Lock failed: Unknown error for user ID: " + id);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("error", "Unknown error occurred."));
     }
-
     @PatchMapping("/{id}/unlock")
     public ResponseEntity<?> unlockUser(@PathVariable Long id) {
+        System.out.println("=== UNLOCK ENDPOINT CALLED for user ID: " + id + " ===");
         int result = userService.unlockUser(id);
+        System.out.println("Unlock user result for ID " + id + ": " + result);
         if (result == 1) {
+            // UserService already sends the RabbitMQ message, no need to duplicate
+            System.out.println("User unlocked successfully, notification sent by UserService");
             return ResponseEntity.ok(Collections.singletonMap("message", "User unlocked successfully."));
         } else if (result == 0) {
+            System.out.println("Unlock failed: Access denied (insufficient privileges) for user ID: " + id);
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(Collections.singletonMap("error", "Access denied: Insufficient privileges."));
+        } else if (result == 2) {
+            System.out.println("Unlock failed: User not found for ID: " + id);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("error", "User not found."));
         }
-        return ResponseEntity.notFound().build();
+        System.out.println("Unlock failed: Unknown error for user ID: " + id);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("error", "Unknown error occurred."));
     }
 
 
