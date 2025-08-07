@@ -1,6 +1,5 @@
 package com.example.demo.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -47,5 +46,6 @@ public class TestOrder {
     @OneToMany(mappedBy = "testOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentTO> commentTO = new ArrayList<>();
 
+    @Column(name = "patient_id", nullable = false)
     private Integer patientTOId;
 }
