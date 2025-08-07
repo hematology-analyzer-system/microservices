@@ -61,4 +61,4 @@ jwt:
 
 app:
   encryption:
-    secret-key: ${APP_ENCRYPTION_SECRET_KEY}
+    secret-key: ${APP_SECRET_KEY}
