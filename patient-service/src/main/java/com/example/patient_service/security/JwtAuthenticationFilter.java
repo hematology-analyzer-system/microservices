@@ -86,6 +86,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
             }
+            
 //            List<GrantedAuthority> authorities
 //                    = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 

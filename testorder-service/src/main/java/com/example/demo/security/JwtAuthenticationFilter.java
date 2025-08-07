@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -18,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,8 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String path = request.getServletPath();
@@ -64,7 +65,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-
         final String token = jwt;
 
         if (token == null || token.trim().isEmpty()) {
@@ -75,7 +75,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try{
             Claims claims = jwtService.getClaimsFromToken(token);
-
             String username = claims.getSubject(); // sub
             Long userId = claims.get("userid", Long.class);
             String fullname = claims.get("fullName", String.class);
@@ -101,14 +100,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .privileges(privileges)
                     .build();
 
-            UsernamePasswordAuthenticationToken authentication
-                    = new UsernamePasswordAuthenticationToken(username, null, null);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null,
+                    null);
 
             authentication.setDetails(currentUser);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        }catch (JwtException e){
+        } catch (JwtException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
