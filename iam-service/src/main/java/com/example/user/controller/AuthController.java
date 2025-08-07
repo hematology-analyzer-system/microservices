@@ -168,7 +168,7 @@ public class AuthController {
             // Set JWT as HttpOnly cookie
             ResponseCookie cookie = ResponseCookie.from("token", token)
                     .httpOnly(true)
-                    .secure(false) // Set to true in production with HTTPS
+                    .secure(true) // Set to true in production with HTTPS
                     .path("/")
                     .maxAge(Duration.ofDays(1))
                     .sameSite("Lax") // Can be "Strict" for stronger protection
@@ -748,7 +748,7 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
                 .build();
