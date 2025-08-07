@@ -74,7 +74,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Allow specific origins. In a production environment, replace "*" with your
         // actual frontend URL(s).
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://your-production-frontend.com"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://netlify.khoa.email"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setAllowCredentials(true); // Allow sending cookies/authorization headers
