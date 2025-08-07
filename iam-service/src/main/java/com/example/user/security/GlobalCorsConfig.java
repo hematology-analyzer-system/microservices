@@ -44,7 +44,8 @@ public class GlobalCorsConfig {
                                 "http://localhost:3000",
                                 "https://healthcare-group-2.netlify.app",
                                 "https://netlify.khoa.email",
-                                "https://healthcare.khoa.email"
+                                "https://healthcare.khoa.email",
+                                "http://172.16.1.175:3000"
                         ) // frontend URL
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
