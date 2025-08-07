@@ -34,6 +34,7 @@ public class UserService {
     private final ModifiedHistoryRepository historyRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
+    private final NotificationService notificationService;
     @Autowired
     private EmailService emailService;
     @Autowired
@@ -121,7 +122,7 @@ public class UserService {
                 assignRoleToUser(user.getId(), request.getRoleIds());
                 userRepository.save(user);
                 log.info("User {} registered successfully with PENDING_ACTIVATION status.", user.getEmail());
-                messageTemplate.convertAndSend("/topic/userCreated", user);
+                // WebSocket notification will be sent by RabbitMQ consumer after audit log processing
                 sendMailActivation(user.getEmail());
                 return ResponseEntity.ok(Collections.singletonMap("message", "User is created successfully!"));
             }
