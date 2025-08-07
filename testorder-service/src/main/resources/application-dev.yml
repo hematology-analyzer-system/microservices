@@ -32,4 +32,4 @@ management:
 
 app:
   encryption:
-    secret-key: mySecretEncryptionKey16Chars
+    secret-key: mySecretKey12345
