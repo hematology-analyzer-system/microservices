@@ -86,6 +86,7 @@ public class AuthController {
 
         // Prepare the response data
         Map<String, Object> responseData = new HashMap<>();
+        responseData.put("userId", user.getId());
         responseData.put("email", user.getEmail());
         responseData.put("fullName", user.getFullName()); // Added fullName
 

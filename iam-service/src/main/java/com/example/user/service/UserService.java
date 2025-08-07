@@ -1,6 +1,4 @@
 package com.example.user.service;
-import com.example.user.config.SchedulerConfig;
-import com.example.user.controller.AuthController;
 import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
@@ -18,15 +16,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 @Service
@@ -52,6 +47,17 @@ public class UserService {
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmailWithoutAuditing(email);
+    }
+
+    public boolean changePassword(Long UserId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(UserId).get();
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            return true;
+        }
+
+        return false;
     }
 
     private boolean validatePrivileges(User currentUser, Long privilegeId) {
@@ -364,11 +370,12 @@ private void sendMailActivation(String email) {
                 direction
         );
     }
-    public void changePassword(Long userId, ChangePasswordRequest request) {
+    public boolean changePassword(Long userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (!user.getPassword().equals(request.getOldPassword())) {
-            throw new IllegalArgumentException("Old password is incorrect.");
+//            throw new IllegalArgumentException("Old password is incorrect.");
+            return false;
         }
         // So sánh password cũ và mới
         if (user.getPassword().equals(request.getNewPassword())) {
@@ -378,6 +385,7 @@ private void sendMailActivation(String email) {
         // Cập nhật mật khẩu
         user.setPassword(request.getNewPassword());
         userRepository.save(user);
+        return true;
     }
 
     public Page<searchDTO> getFilteredUsers(
