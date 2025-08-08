@@ -46,7 +46,7 @@ public class UserController {
         createAuditLog.setEmail(request.getEmail());
         createAuditLog.setIdentifyNum(request.getIdentifyNum());
         // createAuditLog.setDetails("User created: " + request.getFullName());
-        createAuditLog.setAction("USER_CREATE"); // Changed to match the consumer
+        createAuditLog.setAction("CREATE_USER");
         rabbitTemplate.convertAndSend("appExchange", "user.create", createAuditLog);
         return userService.createUser(request);
     }

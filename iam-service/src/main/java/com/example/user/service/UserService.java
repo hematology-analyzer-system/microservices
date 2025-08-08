@@ -8,7 +8,6 @@ import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -17,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -34,7 +35,6 @@ public class UserService {
     private final ModifiedHistoryRepository historyRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
-    private final NotificationService notificationService;
     @Autowired
     private EmailService emailService;
     @Autowired
@@ -122,7 +122,7 @@ public class UserService {
                 assignRoleToUser(user.getId(), request.getRoleIds());
                 userRepository.save(user);
                 log.info("User {} registered successfully with PENDING_ACTIVATION status.", user.getEmail());
-                // WebSocket notification will be sent by RabbitMQ consumer after audit log processing
+                messageTemplate.convertAndSend("/topic/userCreated", user);
                 sendMailActivation(user.getEmail());
                 return ResponseEntity.ok(Collections.singletonMap("message", "User is created successfully!"));
             }
@@ -135,7 +135,7 @@ public class UserService {
 
 private void sendMailActivation(String email) {
     String subject = "Activate Your Account";
-    String frontendLink = "https://fhard.khoa.email/api/iam/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
+    String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
 
     String emailBody =
             "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
