@@ -3,7 +3,6 @@ import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.*;
-import com.example.user.model.UserAuditLog;
 import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
@@ -17,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
