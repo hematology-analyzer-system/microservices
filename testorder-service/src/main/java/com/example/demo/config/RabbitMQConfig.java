@@ -30,11 +30,23 @@ public class RabbitMQConfig {
     public static final String PATIENT_CREATED_QUEUE = "testorder.patient.created.q";
     public static final String PATIENT_UPDATED_QUEUE = "testorder.patient.updated.q";
 
+    // Queue names for notification events
+    public static final String NOTIFICATION_CREATED_QUEUE = "testorder.notification.created.q";
+    public static final String NOTIFICATION_UPDATED_QUEUE = "testorder.notification.updated.q";
+    public static final String NOTIFICATION_STATUS_QUEUE = "testorder.notification.status.q";
+    public static final String NOTIFICATION_RESULT_QUEUE = "testorder.notification.result.q";
+
     // Routing keys
     public static final String TESTORDER_CREATED_ROUTING_KEY = "testorder.event.created.v1";
     public static final String TESTORDER_UPDATED_ROUTING_KEY = "testorder.event.updated.v1";
     public static final String PATIENT_CREATED_ROUTING_KEY = "patient.event.created.v1";
     public static final String PATIENT_UPDATED_ROUTING_KEY = "patient.event.updated.v1";
+
+    // Notification routing keys
+    public static final String NOTIFICATION_CREATED_ROUTING_KEY = "testorder.notification.created";
+    public static final String NOTIFICATION_UPDATED_ROUTING_KEY = "testorder.notification.updated";
+    public static final String NOTIFICATION_STATUS_ROUTING_KEY = "testorder.notification.status";
+    public static final String NOTIFICATION_RESULT_ROUTING_KEY = "testorder.notification.result";
 
     @Autowired
     private MessageConverter messageConverter;
@@ -113,5 +125,61 @@ public class RabbitMQConfig {
                 .bind(patientUpdatedQueue())
                 .to(patientExchange())
                 .with(PATIENT_UPDATED_ROUTING_KEY);
+    }
+
+    // ===================== NOTIFICATION QUEUES & BINDINGS =====================
+
+    // Notification Queues
+    @Bean
+    public Queue notificationCreatedQueue() {
+        return QueueBuilder.durable(NOTIFICATION_CREATED_QUEUE).build();
+    }
+
+    @Bean
+    public Queue notificationUpdatedQueue() {
+        return QueueBuilder.durable(NOTIFICATION_UPDATED_QUEUE).build();
+    }
+
+    @Bean
+    public Queue notificationStatusQueue() {
+        return QueueBuilder.durable(NOTIFICATION_STATUS_QUEUE).build();
+    }
+
+    @Bean
+    public Queue notificationResultQueue() {
+        return QueueBuilder.durable(NOTIFICATION_RESULT_QUEUE).build();
+    }
+
+    // Notification Bindings
+    @Bean
+    public Binding notificationCreatedBinding() {
+        return BindingBuilder
+                .bind(notificationCreatedQueue())
+                .to(testorderExchange())
+                .with(NOTIFICATION_CREATED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding notificationUpdatedBinding() {
+        return BindingBuilder
+                .bind(notificationUpdatedQueue())
+                .to(testorderExchange())
+                .with(NOTIFICATION_UPDATED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding notificationStatusBinding() {
+        return BindingBuilder
+                .bind(notificationStatusQueue())
+                .to(testorderExchange())
+                .with(NOTIFICATION_STATUS_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding notificationResultBinding() {
+        return BindingBuilder
+                .bind(notificationResultQueue())
+                .to(testorderExchange())
+                .with(NOTIFICATION_RESULT_ROUTING_KEY);
     }
 }
