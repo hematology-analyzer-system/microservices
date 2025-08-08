@@ -21,13 +21,8 @@ public class UpdateUserRequest {
     private String gender;
     @NotBlank
     private String phone;
-<<<<<<< Updated upstream
 //    @NotBlank
 //    private String status;
-=======
-    // @NotBlank
-    // private String status;
->>>>>>> Stashed changes
     @NotBlank
     private String identifyNum;
 //    private String profilePic;
