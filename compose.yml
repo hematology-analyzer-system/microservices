@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./patient-service/database/init-patient-service.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     networks:
       - app-network
     restart: unless-stopped
@@ -70,7 +70,7 @@ services:
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -106,7 +106,7 @@ services:
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -139,7 +139,7 @@ services:
     depends_on: [postgres, mongodb, rabbitmq]
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/microservices
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/microservices
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: bavui4444
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
