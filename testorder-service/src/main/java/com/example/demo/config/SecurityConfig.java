@@ -100,6 +100,7 @@ public class SecurityConfig {
                         .permitAll()
                         // .requestMatchers("/auth/register").permitAll()
                         .requestMatchers("/api/messages/**").permitAll()
+                        .requestMatchers("/testorder/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

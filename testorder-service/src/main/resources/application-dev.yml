@@ -13,6 +13,12 @@ spring:
       hibernate:
         format_sql: true
 
+  # MongoDB configuration for notifications
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27019/testorder_notifications}
+
+  # RabbitMQ configuration
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
