@@ -391,7 +391,47 @@ public class TestOrderService {
             throw new AccessDeniedException("User does not have sufficient privileges to deleteTO");
         }
 
+        String deletedByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        // Log and publish test order deleted event before deletion
+        testOrderLogService.logTestOrderDeleted(TO_id, deletedByinString);
+
         testOrderRepository.deleteById(TO_id);
+    }
+
+    public TOResponse completeTestOrder(Long TO_id) {
+        TestOrder testOrder = testOrderRepository.findById(TO_id)
+                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to complete test order");
+        }
+
+        String completedByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        // Update test order status to completed
+        testOrder.setStatus("COMPLETED");
+        testOrder.setUpdateBy(completedByinString);
+        testOrder.setRunBy(completedByinString);
+        TestOrder completedTestOrder = testOrderRepository.save(testOrder);
+
+        // Log and publish test order completed event
+        testOrderLogService.logTestOrderCompleted(completedTestOrder, completedByinString);
+
+        try {
+            // Get patient information for response
+            PatientResponse response = stub.getPatientById(
+                PatientRequest.newBuilder().setId(testOrder.getPatientTOId()).build());
+            
+            return toResponse(completedTestOrder, response);
+        } catch (Exception e) {
+            throw new RuntimeException("gRPC call failed while completing test order: " + e.getMessage(), e);
+        }
     }
 
     public PageTOResponse searchTestOrder(

@@ -72,6 +72,14 @@ public class TestOrderController {
         return "Deleted successfully";
     }
 
+    @PutMapping("/{TOId}/complete")
+    public ResponseEntity<TOResponse> completeTestOrder(
+            @PathVariable("TOId") Long TOId) {
+        TOResponse toResponse = testOrderService.completeTestOrder(TOId);
+
+        return ResponseEntity.ok(toResponse);
+    }
+
     @GetMapping("/{TOId}")
     public ResponseEntity<TOResponse> viewDetailTestOrder(
             @PathVariable Long TOId

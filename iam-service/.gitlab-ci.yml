@@ -18,9 +18,7 @@
       when: always
     - when: never
 
-# Build and Package IAM Service
-build-and-package-iam-service:
-  <<: *iam-service-changes
+# Build and Package IAM Service  <<: *iam-service-changes
   stage: build
   image: docker:20.10.16
   services:
