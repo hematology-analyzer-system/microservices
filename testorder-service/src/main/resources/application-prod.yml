@@ -30,6 +30,7 @@ spring:
     ssl:
       enabled: true
 
+  # MongoDB configuration for message logs and notifications
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}

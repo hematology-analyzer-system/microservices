@@ -27,6 +27,7 @@ public class MessageLogService {
      */
     public void logOutgoingMessage(MessageEnvelope<?> messageEnvelope, String exchange, String routingKey) {
         try {
+            System.out.println("logOutgoingMessage 1");
             String payload = objectMapper.writeValueAsString(messageEnvelope);
 
             MessageLog messageLog = MessageLog.builder()
@@ -38,13 +39,20 @@ public class MessageLogService {
                     .direction(MessageLog.MessageDirection.OUTGOING)
                     .exchange(exchange)
                     .routingKey(routingKey)
+                    .queue("")
                     .payload(payload)
                     .status(MessageLog.MessageStatus.PROCESSED)
                     .serviceName("testorder-service")
                     .processedAt(Instant.now())
                     .build();
-
-            messageLogRepository.save(messageLog);
+            System.out.println("logOutgoingMessage 2");
+            try {
+                messageLogRepository.save(messageLog);
+                System.out.println("logOutgoingMessage 3");
+            } catch (Exception e) {
+                System.err.println("Lỗi khi lưu messageLog: " + e.getMessage());
+                e.printStackTrace(); // In toàn bộ stack trace để bạn biết lỗi ở đâu
+            }
 
             log.info("TRACE publish id={} type={} correlation={} exchange={} routingKey={}",
                     messageEnvelope.getId(), messageEnvelope.getType(),

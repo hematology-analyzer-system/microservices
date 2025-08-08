@@ -196,37 +196,40 @@ public class DataInitializer {
     }
 
     private Map<String, Long> insertPrivilegesAndRoles() {
-        Map<String, String> privileges = Map.ofEntries(
-                Map.entry("READ_ONLY", "Only have right to view patient test orders and patient test order results."),
-                Map.entry("CREATE_TEST_ORDER", "Have right to create a new patient test order"),
-                Map.entry("MODIFY_TEST_ORDER", "Have right to modify information a patient test order."),
-                Map.entry("DELETE_TEST_ORDER", "Have right to delete an exist test order."),
-                Map.entry("REVIEW_TEST_ORDER", "Have right to review, modify test result of test order"),
-                Map.entry("ADD_COMMENT", "Have right to add a new comment for test result"),
-                Map.entry("MODIFY_COMMENT", "Have right to modify a comment."),
-                Map.entry("DELETE_COMMENT", "Have right to delete a comment."),
-                Map.entry("VIEW_CONFIG", "Have right to view, add, modify and delete configurations."),
-                Map.entry("CREATE_CONFIG", "Have right to add a new configuration."),
-                Map.entry("MODIFY_CONFIG", "Have right to modify a configuration."),
-                Map.entry("DELETE_CONFIG", "Have right to delete a configuration."),
-                Map.entry("VIEW_USER", "Have right to view all user profiles"),
-                Map.entry("CREATE_USER", "Have right to create a new user."),
-                Map.entry("MODIFY_USER", "Have right to modify an user."),
-                Map.entry("DELETE_USER", "Have right to delete an user."),
-                Map.entry("LOCK_UNLOCK_USER", "Have right to lock or unlock an user."),
-                Map.entry("VIEW_ROLE", "Have right to view all role privileges."),
-                Map.entry("CREATE_ROLE", "Have right to create a new custom role."),
-                Map.entry("UPDATE_ROLE", "Have right to modify privileges of custom role."),
-                Map.entry("DELETE_ROLE", "Have right to delete a custom role.")
+        // Define a record or class to hold privilege data
+        record PrivilegeData(String code, String description) {}
+
+        List<PrivilegeData> privileges = List.of(
+                new PrivilegeData("READ_ONLY", "Only have right to view patient test orders and patient test order results."),
+                new PrivilegeData("CREATE_TEST_ORDER", "Have right to create a new patient test order"),
+                new PrivilegeData("MODIFY_TEST_ORDER", "Have right to modify information a patient test order."),
+                new PrivilegeData("DELETE_TEST_ORDER", "Have right to delete an exist test order."),
+                new PrivilegeData("REVIEW_TEST_ORDER", "Have right to review, modify test result of test order"),
+                new PrivilegeData("ADD_COMMENT", "Have right to add a new comment for test result"),
+                new PrivilegeData("MODIFY_COMMENT", "Have right to modify a comment."),
+                new PrivilegeData("DELETE_COMMENT", "Have right to delete a comment."),
+                new PrivilegeData("VIEW_CONFIG", "Have right to view, add, modify and delete configurations."),
+                new PrivilegeData("CREATE_CONFIG", "Have right to add a new configuration."),
+                new PrivilegeData("MODIFY_CONFIG", "Have right to modify a configuration."),
+                new PrivilegeData("DELETE_CONFIG", "Have right to delete a configuration."),
+                new PrivilegeData("VIEW_USER", "Have right to view all user profiles"),
+                new PrivilegeData("CREATE_USER", "Have right to create a new user."),
+                new PrivilegeData("MODIFY_USER", "Have right to modify an user."),
+                new PrivilegeData("DELETE_USER", "Have right to delete an user."),
+                new PrivilegeData("LOCK_UNLOCK_USER", "Have right to lock or unlock an user."),
+                new PrivilegeData("VIEW_ROLE", "Have right to view all role privileges."),
+                new PrivilegeData("CREATE_ROLE", "Have right to create a new custom role."),
+                new PrivilegeData("UPDATE_ROLE", "Have right to modify privileges of custom role."),
+                new PrivilegeData("DELETE_ROLE", "Have right to delete a custom role.")
         );
 
         Map<String, Long> privilegeIdMap = new HashMap<>();
-        for (Map.Entry<String, String> entry : privileges.entrySet()) {
+        for (PrivilegeData data : privileges) {
             Privilege p = new Privilege();
-            p.setCode(entry.getKey());
-            p.setDescription(entry.getValue());
+            p.setCode(data.code());
+            p.setDescription(data.description());
             Privilege saved = privilegeRepository.save(p);
-            privilegeIdMap.put(entry.getKey(), saved.getPrivilegeId());
+            privilegeIdMap.put(data.code(), saved.getPrivilegeId());
         }
 
         insertRole("ADMIN", "Administrator", "Full system access", new ArrayList<>(privilegeIdMap.keySet()), privilegeIdMap);

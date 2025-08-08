@@ -55,7 +55,9 @@ public class TestOrderService {
     private final PatientServiceGrpc.PatientServiceBlockingStub stub;
     private final EncryptionService encryptionService;
     private final TestOrderRabbitMQProducer rabbitMQProducer;
-    public TestOrderService(TestOrderRepository testOrderRepository,EncryptionService encryptionService, TestOrderRabbitMQProducer rabbitMQProducer) {
+
+    public TestOrderService(TestOrderRepository testOrderRepository, EncryptionService encryptionService,
+            TestOrderRabbitMQProducer rabbitMQProducer) {
         this.testOrderRepository = testOrderRepository;
         this.stub = ClientRunner.getStub(); // lấy stub từ ClientRunner
         this.encryptionService = encryptionService;
@@ -67,32 +69,34 @@ public class TestOrderService {
         ClientRunner.shutdown();
     }
 
-//    private PatientResponse encryptPatientResponse(PatientResponse originalResponse) {
-//        return PatientResponse.newBuilder()
-//                .setId(originalResponse.getId())
-//                .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
-//                .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
-//                .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
-//                .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
-//                .setGender(originalResponse.getGender()) // Don't encrypt gender
-//                .build();
-//    }
+    // private PatientResponse encryptPatientResponse(PatientResponse
+    // originalResponse) {
+    // return PatientResponse.newBuilder()
+    // .setId(originalResponse.getId())
+    // .setFullName(encryptionService.encrypt(originalResponse.getFullName()))
+    // .setAddress(encryptionService.encrypt(originalResponse.getAddress()))
+    // .setPhone(encryptionService.encrypt(originalResponse.getPhone()))
+    // .setDateOfBirth(originalResponse.getDateOfBirth()) // Don't encrypt date
+    // .setGender(originalResponse.getGender()) // Don't encrypt gender
+    // .build();
+    // }
 
-//    private CreatePatientRequest decryptPatientResponse(CreatePatientRequest patient) {
-//        return CreatePatientRequest.builder()
-////                .id(patient.getId())
-//                .fullName(encryptionService.decrypt(patient.getFullName()))
-//                .address(encryptionService.decrypt(patient.getAddress()))
-//                .email(encryptionService.decrypt(patient.getEmail()))
-//                .phone(encryptionService.decrypt(patient.getPhone()))
-//                .dateOfBirth(patient.getDateOfBirth()) // Date is not encrypted
-//                .gender(patient.getGender()) // Gender is not encrypted
-//                .build();
-//    }
+    // private CreatePatientRequest decryptPatientResponse(CreatePatientRequest
+    // patient) {
+    // return CreatePatientRequest.builder()
+    //// .id(patient.getId())
+    // .fullName(encryptionService.decrypt(patient.getFullName()))
+    // .address(encryptionService.decrypt(patient.getAddress()))
+    // .email(encryptionService.decrypt(patient.getEmail()))
+    // .phone(encryptionService.decrypt(patient.getPhone()))
+    // .dateOfBirth(patient.getDateOfBirth()) // Date is not encrypted
+    // .gender(patient.getGender()) // Gender is not encrypted
+    // .build();
+    // }
 
-    public TOResponse testGrpc(Integer id){
+    public TOResponse testGrpc(Integer id) {
         ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9091)
+                .forAddress("patient-service", 9091)
                 .usePlaintext()
                 .build();
 
@@ -210,11 +214,11 @@ public class TestOrderService {
 
                 .comments(commentResponses)
 
-                .fullName(encryptionService.decrypt(patientResponse.getFullName())) // Use decrypted data
-                .address(encryptionService.decrypt(patientResponse.getAddress()))
+                .fullName(patientResponse.getFullName()) // Use decrypted data
+                .address(patientResponse.getAddress())
                 .gender(patientResponse.getGender().equalsIgnoreCase("MALE") ? Gender.MALE : Gender.FEMALE)
                 .dateOfBirth(safeParseDate(patientResponse.getDateOfBirth()))
-                .phone(encryptionService.decrypt(patientResponse.getPhone()))
+                .phone(patientResponse.getPhone())
                 .build();
     }
 
@@ -228,13 +232,12 @@ public class TestOrderService {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(2L)&&!userPrivileges.contains(3L)) {
+        if (!userPrivileges.contains(2L) && !userPrivileges.contains(3L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to createTO");
         }
 
-        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
-                , currentUser.getEmail(), currentUser.getIdentifyNum());
-
+        String createdByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname(),
+                currentUser.getEmail(), currentUser.getIdentifyNum());
 
         try {
 
@@ -247,8 +250,8 @@ public class TestOrderService {
                 // NEW PATIENT: ENCRYPT data before sending to gRPC
                 CreatePatientRequest createPatientRequest = CreatePatientRequest.newBuilder()
                         .setFullName(encryptionService.encrypt(addTORequest.getFullName())) // ENCRYPT HERE
-                        .setEmail(encryptionService.encrypt(addTORequest.getEmail()))       // ENCRYPT HERE
-                        .setAddress(encryptionService.encrypt(addTORequest.getAddress()))   // ENCRYPT HERE
+                        .setEmail(encryptionService.encrypt(addTORequest.getEmail())) // ENCRYPT HERE
+                        .setAddress(encryptionService.encrypt(addTORequest.getAddress())) // ENCRYPT HERE
                         .setGender(addTORequest.getGender().equals(Gender.MALE) ? "MALE" : "FEMALE")
                         .setPhone(encryptionService.encrypt(addTORequest.getPhoneNumber())) // ENCRYPT HERE
                         .setDateOfBirth(addTORequest.getDateOfBirth().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")))
@@ -277,7 +280,7 @@ public class TestOrderService {
                         .createdAt(testOrder.getRunAt())
                         .notes("TestOrder created")
                         .build();
-                        System.out.println("log 6");
+                System.out.println("log 6");
 
                 String correlationId = UUID.randomUUID().toString();
                 rabbitMQProducer.publishTestOrderCreated(event, correlationId);
@@ -291,15 +294,21 @@ public class TestOrderService {
                 // Don't throw exception here to avoid rolling back the transaction
             }
 
+            // Publish TestOrder created notification
+            try {
+                rabbitMQProducer.publishTestOrderCreatedNotification(testOrder, createdByinString);
+                log.info("Published TestOrder created notification for testOrderId: {}", testOrder.getTestId());
+            } catch (Exception e) {
+                log.error("Failed to publish TestOrder created notification for testOrderId: {}, error: {}",
+                        testOrder.getTestId(), e.getMessage());
+                // Don't throw exception here to avoid rolling back the transaction
+            }
+
             return toResponse(testOrder, response);
         } catch (Exception e) {
             throw new RuntimeException("gRPC call failed aduni: " + e.getMessage(), e);
         }
     }
-
-
-
-
 
     public TOResponse modifyTO(Long TO_id, UpdateTORequest updateTO) {
 
@@ -314,7 +323,7 @@ public class TestOrderService {
         }
 
         try {
-
+            System.out.println(testOrder);
             UpdatePatientRequestGRPC request = UpdatePatientRequestGRPC.newBuilder()
                     .setId(testOrder.getPatientTOId())
                     .setFullName(updateTO.getFullName())
@@ -325,14 +334,15 @@ public class TestOrderService {
                     .build();
 
             PatientResponse modifyResponse = stub.updatePatient(request);
-
+            System.out.println("modifyResponse: " + modifyResponse);
             // Update test order status if provided in the notes or keep current status
             String previousStatus = testOrder.getStatus();
             // Note: UpdateTORequest doesn't have status field, so we keep current status
             // If you need to update status, add status field to UpdateTORequest
-
+            System.out.println("previousStatus: " + previousStatus);
             // Publish TestOrder updated event
             try {
+                System.out.println("log 1");
                 TestOrderUpdatedEvent event = TestOrderUpdatedEvent.builder()
                         .testOrderId(testOrder.getTestId())
                         .patientId(testOrder.getPatientTOId())
@@ -344,11 +354,25 @@ public class TestOrderService {
                         .build();
 
                 String correlationId = UUID.randomUUID().toString();
+                System.out.println("log 2");
                 rabbitMQProducer.publishTestOrderUpdated(event, correlationId);
-
+                System.out.println("log 3");
                 log.info("Published TestOrder updated event for testOrderId: {}", testOrder.getTestId());
+                System.out.println("log 4");
             } catch (Exception e) {
                 log.error("Failed to publish TestOrder updated event for testOrderId: {}, error: {}",
+                        testOrder.getTestId(), e.getMessage());
+                // Don't throw exception here to avoid rolling back the transaction
+            }
+
+            // Publish TestOrder updated notification
+            try {
+                String updatedBy = String.valueOf(currentUser.getUserId());
+                String changeDescription = "Patient information has been updated";
+                rabbitMQProducer.publishTestOrderUpdatedNotification(testOrder, updatedBy, changeDescription);
+                log.info("Published TestOrder updated notification for testOrderId: {}", testOrder.getTestId());
+            } catch (Exception e) {
+                log.error("Failed to publish TestOrder updated notification for testOrderId: {}, error: {}",
                         testOrder.getTestId(), e.getMessage());
                 // Don't throw exception here to avoid rolling back the transaction
             }
@@ -359,7 +383,7 @@ public class TestOrderService {
         }
     }
 
-    public void deteleTestOrder(Long TO_id){
+    public void deteleTestOrder(Long TO_id) {
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
@@ -367,7 +391,47 @@ public class TestOrderService {
             throw new AccessDeniedException("User does not have sufficient privileges to deleteTO");
         }
 
+        String deletedByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        // Log and publish test order deleted event before deletion
+        testOrderLogService.logTestOrderDeleted(TO_id, deletedByinString);
+
         testOrderRepository.deleteById(TO_id);
+    }
+
+    public TOResponse completeTestOrder(Long TO_id) {
+        TestOrder testOrder = testOrderRepository.findById(TO_id)
+                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+
+        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                .getAuthentication().getDetails();
+        Set<Long> userPrivileges = currentUser.getPrivileges();
+        if (!userPrivileges.contains(3L)) {
+            throw new AccessDeniedException("User does not have sufficient privileges to complete test order");
+        }
+
+        String completedByinString = formalizeCreatedBy(currentUser.getUserId(), currentUser.getFullname()
+                , currentUser.getEmail(), currentUser.getIdentifyNum());
+
+        // Update test order status to completed
+        testOrder.setStatus("COMPLETED");
+        testOrder.setUpdateBy(completedByinString);
+        testOrder.setRunBy(completedByinString);
+        TestOrder completedTestOrder = testOrderRepository.save(testOrder);
+
+        // Log and publish test order completed event
+        testOrderLogService.logTestOrderCompleted(completedTestOrder, completedByinString);
+
+        try {
+            // Get patient information for response
+            PatientResponse response = stub.getPatientById(
+                PatientRequest.newBuilder().setId(testOrder.getPatientTOId()).build());
+            
+            return toResponse(completedTestOrder, response);
+        } catch (Exception e) {
+            throw new RuntimeException("gRPC call failed while completing test order: " + e.getMessage(), e);
+        }
     }
 
     public PageTOResponse searchTestOrder(
@@ -568,21 +632,20 @@ public class TestOrderService {
 
     public TOResponse viewDetail(Long id) {
         TestOrder testOrder = testOrderRepository.findById(id)
-                .orElseThrow(()-> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "TestOrder not found!"));
         CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
                 .getAuthentication().getDetails();
         Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(1L)&&!userPrivileges.contains(5L)) {
+        if (!userPrivileges.contains(1L) && !userPrivileges.contains(5L)) {
             throw new AccessDeniedException("User does not have sufficient privileges to view detail TO");
         }
-//        if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
-//            throw new BadRequestException("Test Order Status is Not Completed");
-//        }
-//
-//        if(testOrder.getResults().isEmpty()){
-//            throw new BadRequestException("Test Order Results is empty!");
-//        }
-
+        // if(!testOrder.getStatus().equalsIgnoreCase("COMPLETED")){
+        // throw new BadRequestException("Test Order Status is Not Completed");
+        // }
+        //
+        // if(testOrder.getResults().isEmpty()){
+        // throw new BadRequestException("Test Order Results is empty!");
+        // }
 
         PatientResponse patient = stub.getPatientById(PatientRequest.newBuilder()
                 .setId(testOrder.getPatientTOId()).build());

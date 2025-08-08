@@ -3,7 +3,6 @@ import com.example.user.dto.search.searchDTO;
 import com.example.user.dto.userdto.*;
 import com.example.user.exception.ResourceNotFoundException;
 import com.example.user.model.*;
-import com.example.user.model.UserAuditLog;
 import com.example.user.repository.ModifiedHistoryRepository;
 import com.example.user.repository.UserRepository;
 import com.example.user.repository.RoleRepository;
@@ -17,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -134,7 +134,7 @@ public class UserService {
 
 private void sendMailActivation(String email) {
     String subject = "Activate Your Account";
-    String frontendLink = "http://localhost:3000/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
+    String frontendLink = "https://netlify.khoa.email/activation?email=" + URLEncoder.encode(email, StandardCharsets.UTF_8) + "&flow=activation";
 
     String emailBody =
             "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
@@ -305,7 +305,7 @@ private void sendMailActivation(String email) {
          user.setPhone(dto.getPhone());
          user.setDate_of_Birth(dto.getDate_of_Birth());
          user.setAddress(dto.getAddress());
-         user.setStatus(dto.getStatus());
+//         user.setStatus(dto.getStatus());
          user.setIdentifyNum(dto.getIdentifyNum());
 
          List<Long> roleIds = dto.getRoleIds();

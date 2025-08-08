@@ -22,7 +22,7 @@ spring:
       port: 9091
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:host.docker.internal}
+    host: ${RABBITMQ_HOST:rabbitmq}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}

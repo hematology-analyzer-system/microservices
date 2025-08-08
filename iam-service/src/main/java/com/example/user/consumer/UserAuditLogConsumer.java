@@ -194,7 +194,10 @@ public class UserAuditLogConsumer {
     // create user event
     @RabbitListener(queues = "userQueue")
     public void receiveUserCreateEvent(UserAuditLog userAuditLog) {
-        userAuditLog.setAction("USER_CREATE");
+        // Don't override action if already set, otherwise set default
+        if (userAuditLog.getAction() == null || userAuditLog.getAction().isEmpty()) {
+            userAuditLog.setAction("USER_CREATE");
+        }
         userAuditLog.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
         userAuditLogRepository.save(userAuditLog);
         messagingTemplate.convertAndSend("/topic/userCreated", userAuditLog);
