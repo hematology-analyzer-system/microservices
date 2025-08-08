@@ -21,8 +21,8 @@ public class UpdateUserRequest {
     private String gender;
     @NotBlank
     private String phone;
-    @NotBlank
-    private String status;
+//    @NotBlank
+//    private String status;
     @NotBlank
     private String identifyNum;
 //    private String profilePic;
@@ -31,7 +31,7 @@ public class UpdateUserRequest {
 
     public UpdateUserRequest() {}
 
-    public UpdateUserRequest(String fullName, String date_of_Birth, String email, String address, String gender, String phone, String status, String identifyNum, List<Long> roleIds ) {
+    public UpdateUserRequest(String fullName, String date_of_Birth, String email, String address, String gender, String phone, String identifyNum, List<Long> roleIds ) {
         this.fullName = fullName;
         this.date_of_Birth = date_of_Birth;
         this.email = email;
@@ -39,7 +39,7 @@ public class UpdateUserRequest {
         this.gender = gender;
         this.phone = phone;
         this.identifyNum = identifyNum;
-        this.status = status;
+//        this.status = status;
         this.roleIds = roleIds;
     }
 }

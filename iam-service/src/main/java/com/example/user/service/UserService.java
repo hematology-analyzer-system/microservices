@@ -305,7 +305,7 @@ private void sendMailActivation(String email) {
          user.setPhone(dto.getPhone());
          user.setDate_of_Birth(dto.getDate_of_Birth());
          user.setAddress(dto.getAddress());
-         user.setStatus(dto.getStatus());
+//         user.setStatus(dto.getStatus());
          user.setIdentifyNum(dto.getIdentifyNum());
 
          List<Long> roleIds = dto.getRoleIds();
