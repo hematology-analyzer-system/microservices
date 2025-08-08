@@ -66,52 +66,56 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientRecordResponse addPatientRecord(AddPatientRequest request) {
-        CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
-                .getAuthentication().getDetails();
+        try {
+            CurrentUser currentUser = (CurrentUser) SecurityContextHolder.getContext()
+                    .getAuthentication().getDetails();
 
-        Set<Long> userPrivileges = currentUser.getPrivileges();
-        if (!userPrivileges.contains(2L) && !userPrivileges.contains(3L)) {
-            throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+            Set<Long> userPrivileges = currentUser.getPrivileges();
+            if (!userPrivileges.contains(2L) && !userPrivileges.contains(3L)) {
+                throw new AccessDeniedException("User does not have sufficient privileges to add patient records");
+            }
+            Patient newPatient = Patient.builder()
+                    .fullName(request.getFullName())
+                    .address(request.getAddress())
+                    .email(request.getEmail())
+                    .phone(request.getPhone())
+                    .dateOfBirth(request.getDateOfBirth())
+                    .gender(request.getGender())
+                    .createdBy(formatlizeCreatedBy(
+                            currentUser.getUserId(),
+                            currentUser.getUsername(),
+                            currentUser.getEmail(),
+                            currentUser.getIdentifyNum()
+                    ))
+                    .updateBy(formatlizeCreatedBy(
+                            currentUser.getUserId(),
+                            currentUser.getUsername(),
+                            currentUser.getEmail(),
+                            currentUser.getIdentifyNum()
+                    ))
+                    .build();
+
+            encryptPatientData(newPatient);
+            patientRepository.save(newPatient);
+
+            // Send Add-patient-event to RabbitMQ
+            patientRabbitMQProducer.sendAddPatientEvent(newPatient);
+
+            return PatientRecordResponse.builder()
+                    .id(newPatient.getId())
+                    .fullName(newPatient.getFullName())
+                    .address(newPatient.getAddress())
+                    .email(newPatient.getEmail())
+                    .phone(newPatient.getPhone())
+                    .dateOfBirth(newPatient.getDateOfBirth())
+                    .gender(newPatient.getGender())
+                    .createdAt(newPatient.getCreatedAt())
+                    .updatedAt(newPatient.getUpdatedAt())
+                    .build();
+        } catch (Exception e) {
+            log.info("Error in add patient record: ", e);
+            throw e;
         }
-        Patient newPatient = Patient.builder()
-                .fullName(request.getFullName())
-                .address(request.getAddress())
-                .email(request.getEmail())
-                .phone(request.getPhone())
-                .dateOfBirth(request.getDateOfBirth())
-                .gender(request.getGender())
-                .createdBy(formatlizeCreatedBy(
-                        currentUser.getUserId(),
-                        currentUser.getUsername(),
-                        currentUser.getEmail(),
-                        currentUser.getIdentifyNum()
-                ))
-                .updateBy(formatlizeCreatedBy(
-                        currentUser.getUserId(),
-                        currentUser.getUsername(),
-                        currentUser.getEmail(),
-                        currentUser.getIdentifyNum()
-                ))
-                .build();
-
-        encryptPatientData(newPatient);
-        patientRepository.save(newPatient);
-
-        // Send Add-patient-event to RabbitMQ
-        patientRabbitMQProducer.sendAddPatientEvent(newPatient);
-
-        return PatientRecordResponse.builder()
-                .id(newPatient.getId())
-                .fullName(newPatient.getFullName())
-                .address(newPatient.getAddress())
-                .email(newPatient.getEmail())
-                .phone(newPatient.getPhone())
-                .dateOfBirth(newPatient.getDateOfBirth())
-                .gender(newPatient.getGender())
-                .createdAt(newPatient.getCreatedAt())
-                .updatedAt(newPatient.getUpdatedAt())
-                .build();
-
     }
 
     @Override
