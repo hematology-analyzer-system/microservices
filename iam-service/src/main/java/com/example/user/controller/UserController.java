@@ -188,11 +188,13 @@ public class UserController {
     public ResponseEntity<String> changePassword(
             @PathVariable Long userId,
             @RequestBody @Valid ChangePasswordRequest request) {
-        userService.changePassword(userId, request);
-        auditLog.setUserId(userId);
-        auditLog.setDetails("Password changed for user ID: " + userId);
-        rabbitTemplate.convertAndSend("appExchange", "user.changePassword", auditLog);
-        return ResponseEntity.ok("Password changed successfully.");
+        if (userService.changePassword(userId, request.getOldPassword(), request.getNewPassword()) ) {
+            auditLog.setUserId(userId);
+            auditLog.setDetails("Password changed for user ID: " + userId);
+            rabbitTemplate.convertAndSend("appExchange", "user.changePassword", auditLog);
+            return ResponseEntity.ok("Password changed successfully.");
+        }
+        return ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/filter")

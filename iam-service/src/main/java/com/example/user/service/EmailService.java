@@ -96,59 +96,98 @@
 //}
 
 
+//package com.example.user.service;
+//import io.mailtrap.client.MailtrapClient;
+//import io.mailtrap.config.MailtrapConfig;
+//import io.mailtrap.factory.MailtrapClientFactory;
+//import io.mailtrap.model.request.emails.Address;
+//import io.mailtrap.model.request.emails.MailtrapMail;
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.scheduling.annotation.Async;
+//import org.springframework.stereotype.Service;
+//
+//import java.util.List;
+//
+//@Service
+//public class EmailService {
+//
+////    @Value("${mailtrap.api.token}")
+//    private String apiToken;
+//
+//    @Value("${mailtrap.sender.email}")
+//    private String fromEmail;
+//
+//    @Value("${mailtrap.sender.name}")
+//    private String fromName;
+//
+//    @Async
+//    public void sendEmail(String to, String subject, String body) {
+//        try {
+//            // Create Mailtrap config
+//            apiToken ="7e63fdcef44191cbaa13eae947170f72";
+//            MailtrapConfig config = new MailtrapConfig.Builder()
+//                    .token(apiToken)
+//                    .build();
+//
+//            // Create Mailtrap client
+//            MailtrapClient client = MailtrapClientFactory.createMailtrapClient(config);
+//
+//            // Build the email
+//            MailtrapMail mail = MailtrapMail.builder()
+//                    .from(new Address(fromEmail, fromName))
+//                    .to(List.of(new Address(to)))
+//                    .subject(subject)
+//                    .text(body)
+//                    .html("<p>" + body + "</p>")
+//                    .build();
+//
+//            // Send email
+//            var response = client.send(mail);
+//            System.out.println("Email sent successfully to " + to + " | Response: " + response);
+//
+//        } catch (Exception e) {
+//            System.err.println("Failed to send email via Mailtrap: " + e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
+//}
+
 package com.example.user.service;
-import io.mailtrap.client.MailtrapClient;
-import io.mailtrap.config.MailtrapConfig;
-import io.mailtrap.factory.MailtrapClientFactory;
-import io.mailtrap.model.request.emails.Address;
-import io.mailtrap.model.request.emails.MailtrapMail;
+
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class EmailService {
 
-//    @Value("${mailtrap.api.token}")
-    private String apiToken;
+    @Value("${resend.api.key}")
+    private String apiKey;
 
-    @Value("${mailtrap.sender.email}")
-    private String fromEmail;
-
-    @Value("${mailtrap.sender.name}")
-    private String fromName;
+//    @Value("${resend.sender.email}")
+    private String fromEmail; // e.g., "Acme <onboarding@resend.dev>"
 
     @Async
     public void sendEmail(String to, String subject, String body) {
         try {
-            // Create Mailtrap config
-            apiToken ="7e63fdcef44191cbaa13eae947170f72";
-            MailtrapConfig config = new MailtrapConfig.Builder()
-                    .token(apiToken)
-                    .build();
+            fromEmail = "Healthcare <no-reply@khoa.email>";
+            Resend resend = new Resend(apiKey);
 
-            // Create Mailtrap client
-            MailtrapClient client = MailtrapClientFactory.createMailtrapClient(config);
-
-            // Build the email
-            MailtrapMail mail = MailtrapMail.builder()
-                    .from(new Address(fromEmail, fromName))
-                    .to(List.of(new Address(to)))
+            CreateEmailOptions options = CreateEmailOptions.builder()
+                    .from(fromEmail)
+                    .to(to)
                     .subject(subject)
-                    .text(body)
                     .html("<p>" + body + "</p>")
                     .build();
 
-            // Send email
-            var response = client.send(mail);
-            System.out.println("Email sent successfully to " + to + " | Response: " + response);
-
+            CreateEmailResponse response = resend.emails().send(options);
+            System.out.println("Email sent successfully | ID: " + response.getId());
         } catch (Exception e) {
-            System.err.println("Failed to send email via Mailtrap: " + e.getMessage());
+            System.err.println("Failed to send email via Resend: " + e.getMessage());
             e.printStackTrace();
         }
     }
 }
-

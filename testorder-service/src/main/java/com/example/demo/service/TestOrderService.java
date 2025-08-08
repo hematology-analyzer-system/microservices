@@ -96,7 +96,7 @@ public class TestOrderService {
 
     public TOResponse testGrpc(Integer id) {
         ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("host.docker.internal", 9091)
+                .forAddress("patient-service", 9091)
                 .usePlaintext()
                 .build();
 
