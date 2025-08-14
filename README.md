@@ -116,10 +116,39 @@ Default credentials: `guest / guest`
 
 ---
 
-## ⚙ CI/CD
+## ⚙ CI/CD Pipeline
 
-* GitLab CI pipelines build and package Docker images for each service.
-* Versioned images are pushed to the GitLab Container Registry.
+### 🔄 Pipeline Overview
+
+The project uses **GitLab CI/CD** with automated pipelines that trigger on every commit to ensure code quality and deployability.
+
+### 📋 Pipeline Stages
+
+1. **Build & Test** 
+   - Compiles Java code using Maven
+   - Runs unit tests with JUnit & Mockito
+   - Validates code quality and test coverage
+
+2. **Docker Build**
+   - Builds Docker images for each microservice
+   - Tags images with commit SHA and branch name
+   - Optimizes image layers for faster builds
+
+3. **Registry Push**
+   - Pushes versioned Docker images to GitLab Container Registry
+   - Maintains image history for rollback capabilities
+
+4. **Deploy** (on main branch)
+   - Automatically deploys to staging environment
+   - Runs integration tests against deployed services
+
+
+### 📊 Pipeline Configuration
+
+- **Build Time**: ~5-8 minutes per service
+- **Test Coverage**: Minimum 80% required
+- **Image Registry**: GitLab Container Registry
+- **Deployment**: Automatic on `main` branch
 
 ---
 
