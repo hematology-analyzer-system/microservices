@@ -2,8 +2,10 @@
 
 ## 📌 Overview
 
-The **Hematology Analyzer System** is a healthcare-focused microservices application designed to manage **identity and access**, **patient records**, and **test orders** for hematology analysis.
-It follows a **microservices architecture** and leverages modern technologies for scalability, modularity, and integration with external systems.
+The **Hematology Analyzer System** is a healthcare-focused microservices application designed to manage **identity and
+access**, **patient records**, and **test orders** for hematology analysis.
+It follows a **microservices architecture** and leverages modern technologies for scalability, modularity, and
+integration with external systems.
 
 This system consists of three main services:
 
@@ -15,11 +17,12 @@ This system consists of three main services:
 
 ## 🏗 Architecture
 
-* **Microservices**: Each service is independent, containerized with Docker, and communicates via **RabbitMQ** (message broker).
+* **Microservices**: Each service is independent, containerized with Docker, and communicates via **RabbitMQ** (message
+  broker).
 * **Databases**:
 
-  * **PostgreSQL** (shared relational DB for core services)
-  * **MongoDB** (NoSQL storage for additional patient and test order data)
+    * **PostgreSQL** (shared relational DB for core services)
+    * **MongoDB** (NoSQL storage for additional patient and test order data)
 * **Message Broker**: **RabbitMQ** for event-driven communication.
 * **API Gateway & Security**: Spring Security with JWT authentication.
 * **CI/CD**: GitLab pipelines for build & packaging.
@@ -96,7 +99,7 @@ Each service contains an `example.env` file.
 ## 📡 Service Endpoints
 
 | Service            | Port | Base Path    | Description                                           |
-| ------------------ | ---- | ------------ | ----------------------------------------------------- |
+|--------------------|------|--------------|-------------------------------------------------------|
 | IAM Service        | 8080 | `/iam`       | Authentication, authorization, user & role management |
 | Patient Service    | 8081 | `/patient`   | Patient data CRUD operations                          |
 | Test Order Service | 8082 | `/testorder` | Hematology test order & result management             |
@@ -120,28 +123,28 @@ Default credentials: `guest / guest`
 
 ### 🔄 Pipeline Overview
 
-The project uses **GitLab CI/CD** with automated pipelines that trigger on every commit to ensure code quality and deployability.
+The project uses **GitLab CI/CD** with automated pipelines that trigger on every commit to ensure code quality and
+deployability.
 
 ### 📋 Pipeline Stages
 
-1. **Build & Test** 
-   - Compiles Java code using Maven
-   - Runs unit tests with JUnit & Mockito
-   - Validates code quality and test coverage
+1. **Build & Test**
+    - Compiles Java code using Maven
+    - Runs unit tests with JUnit & Mockito
+    - Validates code quality and test coverage
 
 2. **Docker Build**
-   - Builds Docker images for each microservice
-   - Tags images with commit SHA and branch name
-   - Optimizes image layers for faster builds
+    - Builds Docker images for each microservice
+    - Tags images with commit SHA and branch name
+    - Optimizes image layers for faster builds
 
 3. **Registry Push**
-   - Pushes versioned Docker images to GitLab Container Registry
-   - Maintains image history for rollback capabilities
+    - Pushes versioned Docker images to GitLab Container Registry
+    - Maintains image history for rollback capabilities
 
 4. **Deploy** (on main branch)
-   - Automatically deploys to staging environment
-   - Runs integration tests against deployed services
-
+    - Automatically deploys to staging environment
+    - Runs integration tests against deployed services
 
 ### 📊 Pipeline Configuration
 
